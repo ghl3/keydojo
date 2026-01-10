@@ -191,8 +191,8 @@ export function SessionSummary({ result, onClose, onDismiss }: SessionSummaryPro
           </div>
         )}
 
-        {/* Top mistakes */}
-        {(topMistakes.length > 0 || topPairMistakes.length > 0) && (
+        {/* Top mistakes - only show if more than 1 error */}
+        {result.totalMistakes > 1 && (topMistakes.length > 0 || topPairMistakes.length > 0) && (
           <div className="mb-6">
             {topMistakes.length > 0 && (
               <>
