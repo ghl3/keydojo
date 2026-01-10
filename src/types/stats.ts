@@ -142,6 +142,7 @@ export function getDefaultUserStats(): UserStats {
       words: createDefaultContentTypeStats("words"),
       sentences: createDefaultContentTypeStats("sentences"),
       paragraphs: createDefaultContentTypeStats("paragraphs"),
+      code: createDefaultContentTypeStats("code"),
     },
     wordStats: {},
     pairStats: {},

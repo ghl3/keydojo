@@ -23,7 +23,7 @@ export interface CharacterTypeFlags {
   punctuation: boolean;
 }
 
-export type ContentType = "words" | "sentences" | "paragraphs";
+export type ContentType = "words" | "sentences" | "paragraphs" | "code";
 
 // Active typing session
 export interface TypingSession {

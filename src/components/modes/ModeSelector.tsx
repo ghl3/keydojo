@@ -39,7 +39,7 @@ export function ModeSelector({ mode, onChange }: ModeSelectorProps) {
     <Card className="p-4">
       <div className="flex flex-wrap gap-6">
         {/* Character types */}
-        <div>
+        <div className={mode.contentType === "code" ? "opacity-50 pointer-events-none" : ""}>
           <h3 className="text-sm font-medium text-gray-700 mb-2">Characters</h3>
           <div className="flex flex-wrap gap-4">
             <Toggle
@@ -69,7 +69,7 @@ export function ModeSelector({ mode, onChange }: ModeSelectorProps) {
         <div>
           <h3 className="text-sm font-medium text-gray-700 mb-2">Content</h3>
           <div className="flex gap-2">
-            {(["words", "sentences", "paragraphs"] as ContentType[]).map(
+            {(["words", "sentences", "paragraphs", "code"] as ContentType[]).map(
               (type) => (
                 <button
                   key={type}
@@ -88,6 +88,11 @@ export function ModeSelector({ mode, onChange }: ModeSelectorProps) {
               )
             )}
           </div>
+          {mode.contentType === "code" && (
+            <p className="text-xs text-gray-500 mt-1">
+              Character options disabled for code mode
+            </p>
+          )}
         </div>
       </div>
     </Card>

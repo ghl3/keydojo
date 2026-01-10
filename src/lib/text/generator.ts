@@ -1,13 +1,10 @@
-import type { SessionMode, CharCategory, ContentType, CharacterTypeFlags } from "@/types";
+import type { SessionMode, ContentType, CharacterTypeFlags } from "@/types";
 import type { TextLengthOption } from "@/types/settings";
 import { TEXT_LENGTH_CHARS } from "@/types/settings";
-import {
-  getBasicWords,
-  getAllWords,
-  SIMPLE_SENTENCES,
-  LONGER_SENTENCES,
-  PUNCTUATION_PHRASES,
-} from "./wordLists";
+import { getAllWords } from "./wordLists";
+import { getAllSentences } from "./sentences";
+import { getAllParagraphs } from "./paragraphs";
+import { getAllCodeSnippets } from "./codeSnippets";
 
 interface TextGeneratorOptions {
   mode: SessionMode;
@@ -36,13 +33,25 @@ export function generateBaseText(options: BaseTextOptions): string {
       return generateBaseSentences(targetLength, weakKeys, adaptiveIntensity);
     case "paragraphs":
       return generateBaseParagraphs(targetLength, weakKeys, adaptiveIntensity);
+    case "code":
+      return generateBaseCode(targetLength);
     default:
       return generateBaseWords(targetLength, weakKeys, adaptiveIntensity);
   }
 }
 
 // Transform base text according to character type settings
-export function transformText(baseText: string, characterTypes: CharacterTypeFlags): string {
+// Note: Code mode skips transformations to preserve syntax
+export function transformText(
+  baseText: string,
+  characterTypes: CharacterTypeFlags,
+  contentType?: ContentType
+): string {
+  // Code mode: skip all transformations to preserve syntax
+  if (contentType === "code") {
+    return baseText;
+  }
+
   let result = baseText;
 
   // Handle case transformations
@@ -82,7 +91,7 @@ export function generateText(options: TextGeneratorOptions): string {
     weakKeys: options.weakKeys,
     adaptiveIntensity: options.adaptiveIntensity,
   });
-  return transformText(baseText, options.mode.characterTypes);
+  return transformText(baseText, options.mode.characterTypes, options.mode.contentType);
 }
 
 // Generate base words with mixed case and occasional numbers
@@ -97,7 +106,7 @@ function generateBaseWords(
   let wordIndex = 0;
 
   while (currentLength < targetLength) {
-    const word = selectWeightedWord(wordPool, weakKeys, adaptiveIntensity);
+    const word = selectWeightedItem(wordPool, weakKeys, adaptiveIntensity);
     let result = word.toLowerCase();
 
     // Occasionally capitalize (30% chance)
@@ -125,13 +134,13 @@ function generateBaseSentences(
   weakKeys: string[],
   adaptiveIntensity: number
 ): string {
-  const sentences = [...SIMPLE_SENTENCES, ...PUNCTUATION_PHRASES];
+  const sentences = getAllSentences();
   const result: string[] = [];
   let currentLength = 0;
   let sentenceIndex = 0;
 
   while (currentLength < targetLength) {
-    let sentence = selectWeightedSentence(sentences, weakKeys, adaptiveIntensity);
+    let sentence = selectWeightedItem(sentences, weakKeys, adaptiveIntensity);
 
     // Add a number to every 4th sentence
     if (sentenceIndex % 4 === 2) {
@@ -151,25 +160,23 @@ function generateBaseSentences(
   return result.join("\n");
 }
 
-// Generate base paragraphs with proper case, punctuation, and occasional numbers
+// Generate base paragraphs using the structured paragraph data
 function generateBaseParagraphs(
   targetLength: number,
   weakKeys: string[],
   adaptiveIntensity: number
 ): string {
-  const sentences = [...SIMPLE_SENTENCES, ...LONGER_SENTENCES];
+  const paragraphArrays = getAllParagraphs();
   const paragraphs: string[] = [];
   let currentLength = 0;
   let totalSentenceIndex = 0;
 
   while (currentLength < targetLength) {
-    const sentenceCount = 2 + Math.floor(Math.random() * 3);
-    const paragraph: string[] = [];
+    // Select a paragraph (array of sentences)
+    const paragraphSentences = selectWeightedItem(paragraphArrays, weakKeys, adaptiveIntensity);
 
-    for (let i = 0; i < sentenceCount; i++) {
-      let sentence = selectWeightedSentence(sentences, weakKeys, adaptiveIntensity);
-
-      // Add a number to every 4th sentence
+    // Optionally add numbers to some sentences
+    const processedSentences = paragraphSentences.map(sentence => {
       if (totalSentenceIndex % 4 === 2) {
         const words = sentence.split(" ");
         const insertIndex = Math.floor(words.length / 2);
@@ -177,32 +184,65 @@ function generateBaseParagraphs(
         words.splice(insertIndex, 0, num.toString());
         sentence = words.join(" ");
       }
-
-      paragraph.push(sentence);
       totalSentenceIndex++;
-    }
+      return sentence;
+    });
 
-    const paragraphText = paragraph.join(" ");
+    // Join sentences within paragraph with spaces
+    const paragraphText = processedSentences.join(" ");
     paragraphs.push(paragraphText);
     currentLength += paragraphText.length + 2;
   }
 
+  // Join paragraphs with double newlines
   return paragraphs.join("\n\n");
 }
 
-// Select a word weighted by weak key presence
-function selectWeightedWord(
-  words: string[],
-  weakKeys: string[],
-  intensity: number
-): string {
-  if (weakKeys.length === 0 || intensity === 0) {
-    return words[Math.floor(Math.random() * words.length)];
+// Generate base code snippets
+function generateBaseCode(targetLength: number): string {
+  const snippets = getAllCodeSnippets();
+  const result: string[] = [];
+  let currentLength = 0;
+
+  // Shuffle snippets to get variety
+  const shuffled = [...snippets].sort(() => Math.random() - 0.5);
+  let index = 0;
+
+  while (currentLength < targetLength && index < shuffled.length) {
+    const snippet = shuffled[index];
+    result.push(snippet);
+    currentLength += snippet.length + 2; // +2 for the double newline between snippets
+    index++;
   }
 
-  // Calculate weights for each word
-  const weights = words.map((word) => {
-    const weakKeyCount = countWeakKeysInText(word, weakKeys);
+  // If we've used all snippets but need more, start over with reshuffled
+  while (currentLength < targetLength) {
+    const reshuffled = [...snippets].sort(() => Math.random() - 0.5);
+    for (const snippet of reshuffled) {
+      if (currentLength >= targetLength) break;
+      result.push(snippet);
+      currentLength += snippet.length + 2;
+    }
+  }
+
+  // Join code snippets with double newlines for visual separation
+  return result.join("\n\n");
+}
+
+// Generic weighted selection for any item type
+function selectWeightedItem<T>(
+  items: T[],
+  weakKeys: string[],
+  intensity: number
+): T {
+  if (weakKeys.length === 0 || intensity === 0) {
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  // Calculate weights for each item
+  const weights = items.map((item) => {
+    const text = typeof item === "string" ? item : JSON.stringify(item);
+    const weakKeyCount = countWeakKeysInText(text, weakKeys);
     return 1 + weakKeyCount * intensity * 2;
   });
 
@@ -210,44 +250,14 @@ function selectWeightedWord(
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
   let random = Math.random() * totalWeight;
 
-  for (let i = 0; i < words.length; i++) {
+  for (let i = 0; i < items.length; i++) {
     random -= weights[i];
     if (random <= 0) {
-      return words[i];
+      return items[i];
     }
   }
 
-  return words[words.length - 1];
-}
-
-// Select a sentence weighted by weak key presence
-function selectWeightedSentence(
-  sentences: string[],
-  weakKeys: string[],
-  intensity: number
-): string {
-  if (weakKeys.length === 0 || intensity === 0) {
-    return sentences[Math.floor(Math.random() * sentences.length)];
-  }
-
-  // Calculate weights for each sentence
-  const weights = sentences.map((sentence) => {
-    const weakKeyCount = countWeakKeysInText(sentence, weakKeys);
-    return 1 + weakKeyCount * intensity;
-  });
-
-  // Weighted random selection
-  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-  let random = Math.random() * totalWeight;
-
-  for (let i = 0; i < sentences.length; i++) {
-    random -= weights[i];
-    if (random <= 0) {
-      return sentences[i];
-    }
-  }
-
-  return sentences[sentences.length - 1];
+  return items[items.length - 1];
 }
 
 // Count how many weak keys appear in text
