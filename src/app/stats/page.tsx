@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Card } from "@/components/ui/Card";
 import { Header } from "@/components/layout/Header";
-import type { CharCategory, ContentType } from "@/types";
+import { SessionSummary } from "@/components/stats/SessionSummary";
+import type { CharCategory, ContentType, SessionResult } from "@/types";
 
 export default function StatsPage() {
   const { userStats, isLoaded, resetStats } = useLocalStorage();
+  const [selectedSession, setSelectedSession] = useState<SessionResult | null>(null);
 
   if (!isLoaded) {
     return (
@@ -262,9 +265,16 @@ export default function StatsPage() {
                     </thead>
                     <tbody>
                       {userStats.recentSessions.slice(0, 10).map((session) => (
-                        <tr key={session.id} className="border-b border-cream-100">
+                        <tr
+                          key={session.id}
+                          onClick={() => setSelectedSession(session)}
+                          className="border-b border-cream-100 cursor-pointer hover:bg-cream-100 transition-colors"
+                        >
                           <td className="py-2">
-                            {new Date(session.timestamp).toLocaleDateString()}
+                            {new Date(session.timestamp).toLocaleDateString()}{" "}
+                            <span className="text-gray-400">
+                              {new Date(session.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
                           </td>
                           <td className="py-2 capitalize">
                             {session.mode.contentType}
@@ -308,6 +318,15 @@ export default function StatsPage() {
           </>
         )}
       </div>
+
+      {/* Session Summary Modal */}
+      {selectedSession && (
+        <SessionSummary
+          result={selectedSession}
+          onClose={() => setSelectedSession(null)}
+          onDismiss={() => setSelectedSession(null)}
+        />
+      )}
     </main>
   );
 }
