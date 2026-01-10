@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useMemo } from "react";
-import type { TypingSession } from "@/types";
+import type { TypingSession, ErrorMode } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 
@@ -12,6 +12,7 @@ interface TypingAreaProps {
   onKeyUp: () => void;
   showSpaceMarkers?: boolean;
   fontSize?: string;
+  errorMode?: ErrorMode;
 }
 
 // Split text into words (preserving spaces and punctuation with words)
@@ -47,13 +48,56 @@ function splitIntoWords(text: string): { word: string; startIndex: number }[] {
   return words;
 }
 
-export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers = false, fontSize = "1.125rem" }: TypingAreaProps) {
+export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers = false, fontSize = "1.125rem", errorMode = "stop-on-error" }: TypingAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const currentCharRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Split text into words for non-breaking display
   const words = useMemo(() => splitIntoWords(text), [text]);
+
+  // Find the first uncorrected error (for correction-required mode error zone)
+  const firstErrorIndex = useMemo(() => {
+    if (errorMode !== "correction-required") return -1;
+    return session.typedCharacters.findIndex(char => char.state === "incorrect");
+  }, [session.typedCharacters, errorMode]);
+
+  // Helper to determine character class based on state and error zone
+  const getCharClassName = (charIndex: number) => {
+    const typedChar = session.typedCharacters[charIndex];
+
+    // Characters at or after cursor should never be in error zone
+    // This is a safety check in case state wasn't properly reset
+    if (charIndex >= session.currentIndex) {
+      // Not yet reached by cursor - should be pending or show actual state
+      if (!typedChar || typedChar.state === "pending") return "char-pending";
+      // If somehow still has old state but cursor passed, show as pending
+      if (typedChar.state === "correct") return "char-pending";
+      // Incorrect stays incorrect (user needs to fix it)
+      if (typedChar.state === "incorrect") return "char-incorrect";
+      if (typedChar.state === "corrected") return "char-corrected";
+      return "char-pending";
+    }
+
+    // Characters before cursor
+    if (!typedChar || typedChar.state === "pending") return "char-pending";
+    if (typedChar.state === "corrected") return "char-corrected";
+    if (typedChar.state === "incorrect") return "char-incorrect";
+
+    // Correct characters before cursor - check if in error zone
+    if (typedChar.state === "correct") {
+      if (
+        errorMode === "correction-required" &&
+        firstErrorIndex !== -1 &&
+        charIndex > firstErrorIndex
+      ) {
+        return "char-error-zone";
+      }
+      return "char-correct";
+    }
+
+    return "char-pending";
+  };
 
   // Keep focus on the hidden input
   useEffect(() => {
@@ -144,11 +188,7 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
             const typedChar = session.typedCharacters[charIndex];
             const isCurrent = charIndex === session.currentIndex;
             const isPending = !typedChar || typedChar.state === "pending";
-
-            let className = "char-pending";
-            if (typedChar?.state === "correct") className = "char-correct";
-            else if (typedChar?.state === "incorrect") className = "char-incorrect";
-            else if (typedChar?.state === "corrected") className = "char-corrected";
+            const className = getCharClassName(charIndex);
 
             return (
               <span
@@ -182,13 +222,8 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
             >
               {word.split("").map((char, charOffset) => {
                 const charIndex = startIndex + charOffset;
-                const typedChar = session.typedCharacters[charIndex];
                 const isCurrent = charIndex === session.currentIndex;
-
-                let className = "char-pending";
-                if (typedChar?.state === "correct") className = "char-correct";
-                else if (typedChar?.state === "incorrect") className = "char-incorrect";
-                else if (typedChar?.state === "corrected") className = "char-corrected";
+                const className = getCharClassName(charIndex);
 
                 return (
                   <span

@@ -20,7 +20,11 @@
     @apply text-red-600 bg-red-100;
   }
   .char-corrected {
-    @apply text-gray-900 underline decoration-primary-300;
+    @apply text-gray-900 underline decoration-red-400 decoration-2;
+  }
+  /* Characters typed after an uncorrected error (in correction-required mode) */
+  .char-error-zone {
+    @apply text-red-600;
   }
 
   /* Keyboard key states */

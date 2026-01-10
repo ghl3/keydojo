@@ -91,9 +91,8 @@ export default function Home() {
     text,
     mode,
     onComplete: handleComplete,
-    stopOnError: settings.stopOnError,
+    errorMode: settings.errorMode,
     newlineMode: settings.newlineMode,
-    backspaceMode: settings.backspaceMode,
   });
 
   const handleNewSession = useCallback(() => {
@@ -155,6 +154,7 @@ export default function Home() {
           onKeyUp={handleKeyUp}
           showSpaceMarkers={settings.showSpaceMarkers}
           fontSize={FONT_SIZE_VALUES[settings.fontSize]}
+          errorMode={settings.errorMode}
         />
 
         {/* Keyboard */}

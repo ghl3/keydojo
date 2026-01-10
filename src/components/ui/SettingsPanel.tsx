@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import type { UserSettings, SpaceMode, NewlineMode, BackspaceMode, FontSize } from "@/types/settings";
+import type { UserSettings, SpaceMode, NewlineMode, ErrorMode, FontSize } from "@/types/settings";
 import { Toggle } from "./Toggle";
 
 interface SettingsPanelProps {
@@ -21,14 +21,23 @@ function WithTooltip({
   description,
 }: {
   children: React.ReactNode;
-  description: string;
+  description: React.ReactNode;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseEnter = () => {
     timeoutRef.current = setTimeout(() => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setTooltipStyle({
+          position: 'fixed',
+          left: rect.left,
+          bottom: window.innerHeight - rect.top + 4,
+        });
+      }
       setShowTooltip(true);
     }, 600); // 600ms delay before showing
   };
@@ -57,7 +66,10 @@ function WithTooltip({
     >
       {children}
       {showTooltip && (
-        <div className="absolute left-0 right-0 bottom-full mb-1 z-50 px-2 py-1.5 text-xs text-gray-600 bg-cream-50 border border-cream-200 rounded shadow-sm">
+        <div
+          style={tooltipStyle}
+          className="z-50 px-2 py-1.5 text-xs text-gray-600 bg-cream-50 border border-cream-200 rounded shadow-sm min-w-[280px] max-w-[320px]"
+        >
           {description}
         </div>
       )}
@@ -76,7 +88,7 @@ function SettingSelect<T extends string>({
   value: T;
   options: SelectOption<T>[];
   onChange: (value: T) => void;
-  description: string;
+  description: React.ReactNode;
 }) {
   return (
     <WithTooltip description={description}>
@@ -107,7 +119,7 @@ function SettingToggle({
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
-  description: string;
+  description: React.ReactNode;
 }) {
   return (
     <WithTooltip description={description}>
@@ -131,10 +143,10 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
     { value: "required", label: "Required" },
   ];
 
-  const backspaceModeOptions: SelectOption<BackspaceMode>[] = [
-    { value: "full", label: "Full" },
-    { value: "errors-only", label: "Errors only" },
-    { value: "disabled", label: "Disabled" },
+  const errorModeOptions: SelectOption<ErrorMode>[] = [
+    { value: "stop-on-error", label: "Stop on error" },
+    { value: "advance-on-error", label: "Advance on error" },
+    { value: "correction-required", label: "Correction required" },
   ];
 
   const fontSizeOptions: SelectOption<FontSize>[] = [
@@ -191,18 +203,24 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
               onChange={(value) => onChange({ newlineMode: value })}
               description="Optional: skip newlines by typing the next character. Required: must press Enter at line breaks."
             />
-            <SettingToggle
-              label="Stop on errors"
-              checked={settings.stopOnError}
-              onChange={(value) => onChange({ stopOnError: value })}
-              description="When enabled, you must fix errors before continuing. When disabled, you can type past mistakes."
-            />
             <SettingSelect
-              label="Backspace"
-              value={settings.backspaceMode}
-              options={backspaceModeOptions}
-              onChange={(value) => onChange({ backspaceMode: value })}
-              description="Full: delete any character. Errors only: can only backspace to fix mistakes. Disabled: no deletion allowed."
+              label="Error mode"
+              value={settings.errorMode}
+              options={errorModeOptions}
+              onChange={(value) => onChange({ errorMode: value })}
+              description={
+                <div className="space-y-1.5">
+                  <div>
+                    <span className="font-medium">Stop on error:</span> You cannot advance until you press the correct key. No backspace needed.
+                  </div>
+                  <div>
+                    <span className="font-medium">Advance on error:</span> Errors are marked but you continue typing. No backspace, no corrections.
+                  </div>
+                  <div>
+                    <span className="font-medium">Correction required:</span> Errors are marked and you can continue, but you must backspace and fix all errors before completing.
+                  </div>
+                </div>
+              }
             />
           </div>
         </section>

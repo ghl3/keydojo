@@ -48,9 +48,39 @@ export function updateUserStats(sessionResult: SessionResult): UserStats {
 // User Settings
 export function getUserSettings(): UserSettings {
   const defaults = getDefaultSettings();
-  const saved = get<Partial<UserSettings>>(STORAGE_KEYS.USER_SETTINGS, {});
+  const saved = get<Partial<UserSettings> & LegacySettings>(
+    STORAGE_KEYS.USER_SETTINGS,
+    {}
+  );
+
+  // Migrate from old stopOnError + backspaceMode to new errorMode
+  let errorMode = saved.errorMode;
+  if (!errorMode && ("stopOnError" in saved || "backspaceMode" in saved)) {
+    const stopOnError = saved.stopOnError ?? false;
+    const backspaceMode = saved.backspaceMode ?? "full";
+
+    if (stopOnError) {
+      errorMode = "stop-on-error";
+    } else if (backspaceMode === "disabled") {
+      errorMode = "advance-on-error";
+    } else {
+      errorMode = "correction-required";
+    }
+
+    // Clean up old keys and save migrated settings
+    const { stopOnError: _, backspaceMode: __, ...rest } = saved;
+    const migrated = { ...rest, errorMode };
+    set(STORAGE_KEYS.USER_SETTINGS, migrated);
+  }
+
   // Merge saved settings with defaults to ensure new fields have values
-  return { ...defaults, ...saved };
+  return { ...defaults, ...saved, ...(errorMode ? { errorMode } : {}) };
+}
+
+// Legacy settings types for migration
+interface LegacySettings {
+  stopOnError?: boolean;
+  backspaceMode?: "disabled" | "errors-only" | "full";
 }
 
 export function saveUserSettings(settings: UserSettings): void {

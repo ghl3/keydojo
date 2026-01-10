@@ -8,8 +8,7 @@ export interface UserSettings {
   // Typing Behavior
   spaceMode: SpaceMode;
   newlineMode: NewlineMode;
-  stopOnError: boolean; // Require correction before continuing
-  backspaceMode: BackspaceMode; // How backspace/deletion works
+  errorMode: ErrorMode;
 
   // Display settings
   showKeyboard: boolean;
@@ -30,7 +29,7 @@ export interface UserSettings {
 // Type definitions
 export type SpaceMode = "single" | "double" | "either";
 export type NewlineMode = "required" | "optional";
-export type BackspaceMode = "disabled" | "errors-only" | "full";
+export type ErrorMode = "stop-on-error" | "advance-on-error" | "correction-required";
 export type FontSize = "small" | "medium" | "large";
 export type TextLengthOption = "short" | "medium" | "long";
 
@@ -64,8 +63,7 @@ export function getDefaultSettings(): UserSettings {
     // Typing behavior
     spaceMode: "single",
     newlineMode: "optional",
-    stopOnError: false,
-    backspaceMode: "full",
+    errorMode: "stop-on-error",
     // Display
     showKeyboard: true,
     showLiveStats: true,

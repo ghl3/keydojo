@@ -8,6 +8,7 @@ import type {
   SessionResult,
   LiveStats,
   CharCategory,
+  ErrorMode,
 } from "@/types";
 import { calculateCategoryBreakdown } from "@/lib/stats/calculator";
 import {
@@ -23,9 +24,8 @@ interface UseTypingSessionOptions {
   text: string;
   mode: SessionMode;
   onComplete?: (result: SessionResult) => void;
-  stopOnError?: boolean;
+  errorMode?: ErrorMode;
   newlineMode?: "required" | "optional";
-  backspaceMode?: "disabled" | "errors-only" | "full";
 }
 
 function createInitialSession(text: string, mode: SessionMode): TypingSession {
@@ -63,18 +63,12 @@ function calculateGrossWPM(charactersTyped: number, activeTimeMs: number): numbe
   return minutes > 0 ? Math.round(words / minutes) : 0;
 }
 
-// Calculate accuracy (floor to reserve 100% for perfect runs)
-function calculateAccuracy(correctCount: number, totalAttempts: number): number {
-  return totalAttempts > 0 ? Math.floor((correctCount / totalAttempts) * 100) : 100;
-}
-
 export function useTypingSession({
   text,
   mode,
   onComplete,
-  stopOnError = false,
+  errorMode = "stop-on-error",
   newlineMode = "optional",
-  backspaceMode = "full",
 }: UseTypingSessionOptions) {
   const [session, setSession] = useState<TypingSession>(() =>
     createInitialSession(text, mode)
@@ -135,27 +129,25 @@ export function useTypingSession({
       const currentSession = sessionRef.current;
       const typedCount = currentSession.currentIndex;
 
-      let correctCount = 0;
+      // Count mistakes: each corrected or incorrect position counts as ONE mistake
       let mistakeCount = 0;
-      let totalAttempts = 0;
 
       for (let i = 0; i < currentSession.currentIndex; i++) {
         const char = currentSession.typedCharacters[i];
-        totalAttempts += char.attempts;
-        if (char.state === "correct") {
-          correctCount++;
-        } else if (char.state === "incorrect") {
+        if (char.state === "incorrect" || char.state === "corrected") {
           mistakeCount++;
-        } else if (char.state === "corrected") {
-          correctCount++;
-          mistakeCount += char.attempts - 1;
         }
       }
+
+      // Accuracy based on characters, not attempts
+      const currentAccuracy = typedCount > 0
+        ? Math.floor(((typedCount - mistakeCount) / typedCount) * 100)
+        : 100;
 
       setLiveStats({
         elapsedTime: activeTypingTimeRef.current,
         currentWPM: calculateGrossWPM(typedCount, activeTypingTimeRef.current),
-        currentAccuracy: calculateAccuracy(correctCount, totalAttempts),
+        currentAccuracy,
         charactersTyped: typedCount,
         mistakeCount,
         progress: currentSession.text.length > 0
@@ -254,39 +246,34 @@ export function useTypingSession({
 
       // Handle backspace
       if (e.key === "Backspace") {
-        // Check if backspace is allowed based on mode
-        if (backspaceMode === "disabled") {
-          // Backspace completely disabled
+        // Backspace behavior depends on error mode:
+        // - stop-on-error: disabled (can't advance past errors anyway)
+        // - advance-on-error: disabled (no corrections allowed)
+        // - correction-required: enabled (must fix errors to complete)
+        if (errorMode !== "correction-required") {
           return;
         }
 
-        if (currentIndex > 0) {
-          const prevCharState = currentSession.typedCharacters[currentIndex - 1].state;
+        // Use prev.currentIndex inside setSession to avoid stale closure issues
+        setSession((prev) => {
+          if (prev.currentIndex === 0) return prev;
 
-          // In "errors-only" mode, only allow backspace if there's an error to fix
-          if (backspaceMode === "errors-only") {
-            // Can only backspace if previous char was incorrect OR current position has an error
-            const currentCharState = currentSession.typedCharacters[currentIndex]?.state;
-            const hasErrorToFix = prevCharState === "incorrect" || currentCharState === "incorrect";
-            if (!hasErrorToFix) {
-              // No error to fix, don't allow backspace
-              return;
-            }
-          }
-
-          setSession((prev) => {
-            const newTypedCharacters = [...prev.typedCharacters];
-            newTypedCharacters[currentIndex - 1] = {
-              ...newTypedCharacters[currentIndex - 1],
+          const newTypedCharacters = [...prev.typedCharacters];
+          const prevChar = newTypedCharacters[prev.currentIndex - 1];
+          // Keep "incorrect" state so we know there was an error to fix
+          // Only reset to "pending" if it was correct/corrected
+          if (prevChar.state !== "incorrect") {
+            newTypedCharacters[prev.currentIndex - 1] = {
+              ...prevChar,
               state: "pending",
             };
-            return {
-              ...prev,
-              currentIndex: currentIndex - 1,
-              typedCharacters: newTypedCharacters,
-            };
-          });
-        }
+          }
+          return {
+            ...prev,
+            currentIndex: prev.currentIndex - 1,
+            typedCharacters: newTypedCharacters,
+          };
+        });
         setActiveKeyWithTimeout("Backspace");
         return;
       }
@@ -382,7 +369,11 @@ export function useTypingSession({
           };
 
           const newIndex = currentIndex + 1;
-          const isComplete = newIndex >= prev.text.length;
+
+          // For correction-required mode, can only complete if no uncorrected errors remain
+          const hasUncorrectedErrors = errorMode === "correction-required" &&
+            newTypedCharacters.some(char => char.state === "incorrect");
+          const isComplete = newIndex >= prev.text.length && !hasUncorrectedErrors;
 
           // Check for word/sentence/paragraph boundary crossings
           let { wordsWithErrors, sentencesWithErrors, paragraphsWithErrors } = prev;
@@ -448,9 +439,11 @@ export function useTypingSession({
             attempts: newTypedCharacters[currentIndex].attempts + 1,
           };
 
-          // If stopOnError is true (default), don't advance cursor - user must backspace and fix
-          // If stopOnError is false, advance past the error
-          if (stopOnError) {
+          // Error mode behavior:
+          // - stop-on-error: don't advance, must hit correct key
+          // - advance-on-error: advance past error, no fixing
+          // - correction-required: advance past error, but must fix all to complete
+          if (errorMode === "stop-on-error") {
             return {
               ...prev,
               typedCharacters: newTypedCharacters,
@@ -460,9 +453,14 @@ export function useTypingSession({
             };
           }
 
-          // Advance past the error (stopOnError is false)
+          // Advance past the error (advance-on-error or correction-required)
           const newIndex = currentIndex + 1;
-          const isComplete = newIndex >= prev.text.length;
+
+          // For correction-required, can't complete with uncorrected errors
+          // For advance-on-error, can complete regardless
+          const hasUncorrectedErrors = errorMode === "correction-required" &&
+            newTypedCharacters.some(char => char.state === "incorrect");
+          const isComplete = newIndex >= prev.text.length && !hasUncorrectedErrors;
 
           // Check for word/sentence/paragraph boundary crossings
           let { wordsWithErrors, sentencesWithErrors, paragraphsWithErrors } = prev;
@@ -471,19 +469,19 @@ export function useTypingSession({
           let currentParagraphHasError = true;
 
           // Check if we crossed a word boundary
-          if (prev.wordBoundaries.includes(newIndex) || isComplete) {
+          if (prev.wordBoundaries.includes(newIndex) || newIndex >= prev.text.length) {
             wordsWithErrors++;
             currentWordHasError = false;
           }
 
           // Check if we crossed a sentence boundary
-          if (prev.sentenceBoundaries.includes(newIndex) || isComplete) {
+          if (prev.sentenceBoundaries.includes(newIndex) || newIndex >= prev.text.length) {
             sentencesWithErrors++;
             currentSentenceHasError = false;
           }
 
           // Check if we crossed a paragraph boundary
-          if (prev.paragraphBoundaries.includes(newIndex) || isComplete) {
+          if (prev.paragraphBoundaries.includes(newIndex) || newIndex >= prev.text.length) {
             paragraphsWithErrors++;
             currentParagraphHasError = false;
           }
@@ -504,7 +502,7 @@ export function useTypingSession({
         });
       }
     },
-    [text, mode, stopOnError, newlineMode, backspaceMode, setActiveKeyWithTimeout, setErrorKeyWithTimeout]
+    [text, mode, errorMode, newlineMode, setActiveKeyWithTimeout, setErrorKeyWithTimeout]
   );
 
   const handleKeyUp = useCallback(() => {
@@ -517,15 +515,13 @@ export function useTypingSession({
       // Use active typing time for duration
       const duration = activeTypingTimeRef.current;
 
-      // Calculate totals
+      // Calculate totals - each corrected character counts as ONE error
+      // (regardless of how many attempts it took to get it right)
       let totalMistakes = 0;
-      let totalAttempts = 0;
 
       for (const char of session.typedCharacters) {
-        totalAttempts += char.attempts;
         if (char.state === "corrected") {
-          // Character was typed wrong at least once before getting it right
-          totalMistakes += char.attempts - 1;
+          totalMistakes += 1;
         }
       }
 
@@ -548,8 +544,8 @@ export function useTypingSession({
         netWPM: Math.round(
           ((session.text.length / 5) - totalMistakes) / (duration / 60000)
         ),
-        accuracy: totalAttempts > 0
-          ? Math.floor(((totalAttempts - totalMistakes) / totalAttempts) * 100)
+        accuracy: session.text.length > 0
+          ? Math.floor(((session.text.length - totalMistakes) / session.text.length) * 100)
           : 100,
         totalCharacters: session.text.length,
         totalMistakes,
