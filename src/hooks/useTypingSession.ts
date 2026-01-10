@@ -63,9 +63,9 @@ function calculateGrossWPM(charactersTyped: number, activeTimeMs: number): numbe
   return minutes > 0 ? Math.round(words / minutes) : 0;
 }
 
-// Calculate accuracy
+// Calculate accuracy (floor to reserve 100% for perfect runs)
 function calculateAccuracy(correctCount: number, totalAttempts: number): number {
-  return totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 100;
+  return totalAttempts > 0 ? Math.floor((correctCount / totalAttempts) * 100) : 100;
 }
 
 export function useTypingSession({
@@ -549,7 +549,7 @@ export function useTypingSession({
           ((session.text.length / 5) - totalMistakes) / (duration / 60000)
         ),
         accuracy: totalAttempts > 0
-          ? Math.round(((totalAttempts - totalMistakes) / totalAttempts) * 100)
+          ? Math.floor(((totalAttempts - totalMistakes) / totalAttempts) * 100)
           : 100,
         totalCharacters: session.text.length,
         totalMistakes,

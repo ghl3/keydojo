@@ -263,9 +263,9 @@ export const PUNCTUATION_SENTENCES = [
 
   // Parentheses and dashes
   "The meeting (originally scheduled for Monday) was moved to Thursday.",
-  "Her brother—the one who lives in Boston—is visiting next week.",
+  "Her brother - the one who lives in Boston - is visiting next week.",
   "The results (see Figure 3) clearly support our hypothesis.",
-  "That restaurant—if you can call it that—was a disaster.",
+  "That restaurant - if you can call it that - was a disaster.",
   "The book (published in 1984) is still relevant today.",
 
   // Apostrophes and contractions

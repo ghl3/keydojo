@@ -94,7 +94,7 @@ export const NATURE_PARAGRAPHS: string[][] = [
   [
     "The garden was coming alive after a long winter.",
     "Green shoots pushed through the dark soil.",
-    "Early flowers—crocuses and daffodils—added splashes of color.",
+    "Early flowers - crocuses and daffodils - added splashes of color.",
     "Bees were already busy visiting the first blooms of the season.",
   ],
 
@@ -195,7 +195,7 @@ export const EDUCATION_PARAGRAPHS: string[][] = [
   // Study techniques
   [
     "Effective studying is about quality, not just quantity.",
-    "Active recall—testing yourself—beats passive reading.",
+    "Active recall - testing yourself - beats passive reading.",
     "Taking breaks helps your brain consolidate information.",
     "A quiet environment and regular schedule also make a difference.",
   ],
@@ -369,7 +369,7 @@ export const HEALTH_PARAGRAPHS: string[][] = [
   [
     "Mental health is just as important as physical health.",
     "Stress management techniques like meditation can help.",
-    "Talking to someone—a friend, family member, or professional—makes a difference.",
+    "Talking to someone - a friend, family member, or professional - makes a difference.",
     "Taking breaks and setting boundaries protects your well-being.",
   ],
 

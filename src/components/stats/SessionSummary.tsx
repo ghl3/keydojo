@@ -78,7 +78,7 @@ export function SessionSummary({ result, onClose, onDismiss }: SessionSummaryPro
       category: category as CharCategory,
       accuracy:
         data.attempts > 0
-          ? Math.round(((data.attempts - data.mistakes) / data.attempts) * 100)
+          ? Math.floor(((data.attempts - data.mistakes) / data.attempts) * 100)
           : 100,
       wpm: data.wpm,
     }));

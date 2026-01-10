@@ -23,13 +23,13 @@ export function calculateNetWPM(
   return Math.max(0, Math.round(grossWPM - errorPenalty));
 }
 
-// Accuracy as percentage
+// Accuracy as percentage (floor to reserve 100% for perfect runs)
 export function calculateAccuracy(
   correctCharacters: number,
   totalAttempts: number
 ): number {
   return totalAttempts > 0
-    ? Math.round((correctCharacters / totalAttempts) * 100)
+    ? Math.floor((correctCharacters / totalAttempts) * 100)
     : 100;
 }
 

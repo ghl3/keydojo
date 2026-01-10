@@ -110,7 +110,7 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
       <div
         ref={containerRef}
         onClick={handleClick}
-        className="font-mono leading-relaxed cursor-text max-h-[180px] overflow-y-auto select-none"
+        className="font-mono leading-relaxed cursor-text max-h-[180px] overflow-y-auto"
         style={{ fontSize }}
       >
         {words.map((wordData, wordIndex) => {
