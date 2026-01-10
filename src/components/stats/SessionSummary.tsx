@@ -150,7 +150,7 @@ export function SessionSummary({ result, onClose, onDismiss }: SessionSummaryPro
                 <div className="font-medium">{result.sentencesTyped}</div>
                 <div className="text-gray-500">Sentences</div>
                 <div className="text-xs text-gray-400">
-                  {(result.errorsPerSentence ?? 0).toFixed(2)} errors/sent
+                  {(result.errorsPerSentence ?? 0).toFixed(2)} errors/sentence
                 </div>
               </div>
             )}
@@ -159,7 +159,7 @@ export function SessionSummary({ result, onClose, onDismiss }: SessionSummaryPro
                 <div className="font-medium">{result.paragraphsTyped}</div>
                 <div className="text-gray-500">Paragraphs</div>
                 <div className="text-xs text-gray-400">
-                  {(result.errorsPerParagraph ?? 0).toFixed(2)} errors/para
+                  {(result.errorsPerParagraph ?? 0).toFixed(2)} errors/paragraph
                 </div>
               </div>
             )}

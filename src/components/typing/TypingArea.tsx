@@ -11,6 +11,7 @@ interface TypingAreaProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onKeyUp: () => void;
   showSpaceMarkers?: boolean;
+  fontSize?: string;
 }
 
 // Split text into words (preserving spaces and punctuation with words)
@@ -46,7 +47,7 @@ function splitIntoWords(text: string): { word: string; startIndex: number }[] {
   return words;
 }
 
-export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers = false }: TypingAreaProps) {
+export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers = false, fontSize = "1.125rem" }: TypingAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const currentCharRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -109,7 +110,8 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
       <div
         ref={containerRef}
         onClick={handleClick}
-        className="font-mono text-lg leading-relaxed cursor-text max-h-[180px] overflow-y-auto select-none"
+        className="font-mono leading-relaxed cursor-text max-h-[180px] overflow-y-auto select-none"
+        style={{ fontSize }}
       >
         {words.map((wordData, wordIndex) => {
           const { word, startIndex } = wordData;

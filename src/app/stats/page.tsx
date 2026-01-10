@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Card } from "@/components/ui/Card";
-import Link from "next/link";
+import { Header } from "@/components/layout/Header";
 import type { CharCategory, ContentType } from "@/types";
 
 export default function StatsPage() {
@@ -38,22 +39,7 @@ export default function StatsPage() {
 
   return (
     <main className="min-h-screen bg-cream-50">
-      {/* Header */}
-      <header className="border-b border-cream-200 bg-white">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-primary-700">
-            <Link href="/">KeyDojo</Link>
-          </h1>
-          <nav className="flex gap-4">
-            <Link
-              href="/"
-              className="text-gray-600 hover:text-primary-600 transition-colors"
-            >
-              Practice
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <h2 className="text-2xl font-bold text-gray-800">Your Statistics</h2>

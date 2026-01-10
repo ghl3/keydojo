@@ -47,7 +47,10 @@ export function updateUserStats(sessionResult: SessionResult): UserStats {
 
 // User Settings
 export function getUserSettings(): UserSettings {
-  return get(STORAGE_KEYS.USER_SETTINGS, getDefaultSettings());
+  const defaults = getDefaultSettings();
+  const saved = get<Partial<UserSettings>>(STORAGE_KEYS.USER_SETTINGS, {});
+  // Merge saved settings with defaults to ensure new fields have values
+  return { ...defaults, ...saved };
 }
 
 export function saveUserSettings(settings: UserSettings): void {

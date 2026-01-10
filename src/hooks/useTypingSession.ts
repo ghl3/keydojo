@@ -23,6 +23,9 @@ interface UseTypingSessionOptions {
   text: string;
   mode: SessionMode;
   onComplete?: (result: SessionResult) => void;
+  stopOnError?: boolean;
+  newlineMode?: "required" | "optional";
+  backspaceMode?: "disabled" | "errors-only" | "full";
 }
 
 function createInitialSession(text: string, mode: SessionMode): TypingSession {
@@ -65,7 +68,14 @@ function calculateAccuracy(correctCount: number, totalAttempts: number): number 
   return totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 100;
 }
 
-export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOptions) {
+export function useTypingSession({
+  text,
+  mode,
+  onComplete,
+  stopOnError = false,
+  newlineMode = "optional",
+  backspaceMode = "full",
+}: UseTypingSessionOptions) {
   const [session, setSession] = useState<TypingSession>(() =>
     createInitialSession(text, mode)
   );
@@ -244,7 +254,26 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
 
       // Handle backspace
       if (e.key === "Backspace") {
+        // Check if backspace is allowed based on mode
+        if (backspaceMode === "disabled") {
+          // Backspace completely disabled
+          return;
+        }
+
         if (currentIndex > 0) {
+          const prevCharState = currentSession.typedCharacters[currentIndex - 1].state;
+
+          // In "errors-only" mode, only allow backspace if there's an error to fix
+          if (backspaceMode === "errors-only") {
+            // Can only backspace if previous char was incorrect OR current position has an error
+            const currentCharState = currentSession.typedCharacters[currentIndex]?.state;
+            const hasErrorToFix = prevCharState === "incorrect" || currentCharState === "incorrect";
+            if (!hasErrorToFix) {
+              // No error to fix, don't allow backspace
+              return;
+            }
+          }
+
           setSession((prev) => {
             const newTypedCharacters = [...prev.typedCharacters];
             newTypedCharacters[currentIndex - 1] = {
@@ -268,8 +297,9 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
       setActiveKeyWithTimeout(e.key);
 
       // Handle optional newlines (skippable by typing the next character)
+      // Only allow skipping when newlineMode is "optional"
       // If expected is newline but user typed the character after it, skip the newline
-      if (expectedChar === "\n" && e.key !== "\n") {
+      if (newlineMode === "optional" && expectedChar === "\n" && e.key !== "\n") {
         const nextChar = currentSession.text[currentIndex + 1];
         if (nextChar && e.key === nextChar) {
           // Skip the newline and process the typed character
@@ -418,17 +448,63 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
             attempts: newTypedCharacters[currentIndex].attempts + 1,
           };
 
+          // If stopOnError is true (default), don't advance cursor - user must backspace and fix
+          // If stopOnError is false, advance past the error
+          if (stopOnError) {
+            return {
+              ...prev,
+              typedCharacters: newTypedCharacters,
+              currentWordHasError: true,
+              currentSentenceHasError: true,
+              currentParagraphHasError: true,
+            };
+          }
+
+          // Advance past the error (stopOnError is false)
+          const newIndex = currentIndex + 1;
+          const isComplete = newIndex >= prev.text.length;
+
+          // Check for word/sentence/paragraph boundary crossings
+          let { wordsWithErrors, sentencesWithErrors, paragraphsWithErrors } = prev;
+          let currentWordHasError = true;
+          let currentSentenceHasError = true;
+          let currentParagraphHasError = true;
+
+          // Check if we crossed a word boundary
+          if (prev.wordBoundaries.includes(newIndex) || isComplete) {
+            wordsWithErrors++;
+            currentWordHasError = false;
+          }
+
+          // Check if we crossed a sentence boundary
+          if (prev.sentenceBoundaries.includes(newIndex) || isComplete) {
+            sentencesWithErrors++;
+            currentSentenceHasError = false;
+          }
+
+          // Check if we crossed a paragraph boundary
+          if (prev.paragraphBoundaries.includes(newIndex) || isComplete) {
+            paragraphsWithErrors++;
+            currentParagraphHasError = false;
+          }
+
           return {
             ...prev,
+            currentIndex: newIndex,
             typedCharacters: newTypedCharacters,
-            currentWordHasError: true,
-            currentSentenceHasError: true,
-            currentParagraphHasError: true,
+            isComplete,
+            endedAt: isComplete ? now : undefined,
+            wordsWithErrors,
+            sentencesWithErrors,
+            paragraphsWithErrors,
+            currentWordHasError,
+            currentSentenceHasError,
+            currentParagraphHasError,
           };
         });
       }
     },
-    [text, mode, setActiveKeyWithTimeout, setErrorKeyWithTimeout]
+    [text, mode, stopOnError, newlineMode, backspaceMode, setActiveKeyWithTimeout, setErrorKeyWithTimeout]
   );
 
   const handleKeyUp = useCallback(() => {

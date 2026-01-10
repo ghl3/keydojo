@@ -5,21 +5,33 @@ export interface UserSettings {
   // Mode defaults
   defaultMode: SessionMode;
 
+  // Typing Behavior
+  spaceMode: SpaceMode;
+  newlineMode: NewlineMode;
+  stopOnError: boolean; // Require correction before continuing
+  backspaceMode: BackspaceMode; // How backspace/deletion works
+
   // Display settings
   showKeyboard: boolean;
   showLiveStats: boolean;
   highlightNextKey: boolean;
-  showSpaceMarkers: boolean; // Show underscore markers for spaces
+  showSpaceMarkers: boolean;
+  fontSize: FontSize;
 
-  // Text generation settings
+  // Audio settings
+  soundEnabled: boolean;
+
+  // Difficulty settings
   textLength: TextLengthOption;
-  adaptiveDifficulty: boolean; // Use mistake-aware text generation
+  adaptiveDifficulty: boolean;
   adaptiveIntensity: number; // 0-1, how much to weight weak keys
-
-  // Session settings
-  stopOnError: boolean; // Require correction before continuing
 }
 
+// Type definitions
+export type SpaceMode = "single" | "double" | "either";
+export type NewlineMode = "required" | "optional";
+export type BackspaceMode = "disabled" | "errors-only" | "full";
+export type FontSize = "small" | "medium" | "large";
 export type TextLengthOption = "short" | "medium" | "long";
 
 // Length mappings
@@ -27,6 +39,13 @@ export const TEXT_LENGTH_CHARS: Record<TextLengthOption, number> = {
   short: 50,
   medium: 150,
   long: 300,
+};
+
+// Font size mappings (in rem)
+export const FONT_SIZE_VALUES: Record<FontSize, string> = {
+  small: "1rem",
+  medium: "1.25rem",
+  large: "1.5rem",
 };
 
 // Default settings
@@ -41,13 +60,22 @@ export function getDefaultSettings(): UserSettings {
       },
       contentType: "words",
     },
+    // Typing behavior
+    spaceMode: "single",
+    newlineMode: "optional",
+    stopOnError: false,
+    backspaceMode: "full",
+    // Display
     showKeyboard: true,
     showLiveStats: true,
     highlightNextKey: true,
     showSpaceMarkers: false,
+    fontSize: "medium",
+    // Audio
+    soundEnabled: false,
+    // Difficulty
     textLength: "medium",
-    adaptiveDifficulty: true,
+    adaptiveDifficulty: false,
     adaptiveIntensity: 0.5,
-    stopOnError: false,
   };
 }
