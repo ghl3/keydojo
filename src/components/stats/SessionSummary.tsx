@@ -9,6 +9,23 @@ interface SessionSummaryProps {
   onClose: () => void;
 }
 
+// Color helpers for performance metrics
+function getAccuracyColor(accuracy: number): string {
+  if (accuracy >= 98) return "text-green-600";
+  if (accuracy >= 95) return "text-green-500";
+  if (accuracy >= 90) return "text-yellow-600";
+  if (accuracy >= 85) return "text-yellow-500";
+  return "text-red-500";
+}
+
+function getWpmColor(wpm: number): string {
+  if (wpm >= 80) return "text-green-600";
+  if (wpm >= 60) return "text-green-500";
+  if (wpm >= 40) return "text-yellow-600";
+  if (wpm >= 25) return "text-yellow-500";
+  return "text-gray-600";
+}
+
 export function SessionSummary({ result, onClose }: SessionSummaryProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -38,8 +55,13 @@ export function SessionSummary({ result, onClose }: SessionSummaryProps) {
     return `${seconds}s`;
   };
 
-  // Get top mistakes
+  // Get top key mistakes
   const topMistakes = Object.entries(result.mistakesByKey)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5);
+
+  // Get top pair mistakes
+  const topPairMistakes = Object.entries(result.mistakesByPair || {})
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5);
 
@@ -65,13 +87,13 @@ export function SessionSummary({ result, onClose }: SessionSummaryProps) {
         {/* Main stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="text-center">
-            <div className="text-4xl font-bold text-primary-600">
+            <div className={`text-4xl font-bold ${getWpmColor(result.grossWPM)}`}>
               {result.grossWPM}
             </div>
             <div className="text-sm text-gray-500">WPM</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-primary-600">
+            <div className={`text-4xl font-bold ${getAccuracyColor(result.accuracy)}`}>
               {result.accuracy}%
             </div>
             <div className="text-sm text-gray-500">Accuracy</div>
@@ -130,16 +152,8 @@ export function SessionSummary({ result, onClose }: SessionSummaryProps) {
                 >
                   <span className="capitalize text-gray-600">{category}</span>
                   <div className="flex gap-4">
-                    <span className="text-gray-500">{wpm} WPM</span>
-                    <span
-                      className={`font-medium ${
-                        accuracy >= 95
-                          ? "text-green-600"
-                          : accuracy >= 85
-                          ? "text-yellow-600"
-                          : "text-red-600"
-                      }`}
-                    >
+                    <span className={getWpmColor(wpm)}>{wpm} WPM</span>
+                    <span className={`font-medium ${getAccuracyColor(accuracy)}`}>
                       {accuracy}%
                     </span>
                   </div>
@@ -150,21 +164,42 @@ export function SessionSummary({ result, onClose }: SessionSummaryProps) {
         )}
 
         {/* Top mistakes */}
-        {topMistakes.length > 0 && (
+        {(topMistakes.length > 0 || topPairMistakes.length > 0) && (
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              Keys to Practice
-            </h3>
-            <div className="flex gap-2 flex-wrap">
-              {topMistakes.map(([key, count]) => (
-                <span
-                  key={key}
-                  className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium"
-                >
-                  {key === " " ? "Space" : key} ({count})
-                </span>
-              ))}
-            </div>
+            {topMistakes.length > 0 && (
+              <>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Keys to Practice
+                </h3>
+                <div className="flex gap-2 flex-wrap mb-3">
+                  {topMistakes.map(([key, count]) => (
+                    <span
+                      key={key}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium"
+                    >
+                      {key === " " ? "Space" : key} ({count})
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+            {topPairMistakes.length > 0 && (
+              <>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Pairs to Practice
+                </h3>
+                <div className="flex gap-2 flex-wrap">
+                  {topPairMistakes.map(([pair, count]) => (
+                    <span
+                      key={pair}
+                      className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium font-mono"
+                    >
+                      {pair.replace(/ /g, "␣")} ({count})
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 

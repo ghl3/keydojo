@@ -75,6 +75,9 @@ export interface SessionResult {
   // Per-key mistakes in this session
   mistakesByKey: Record<string, number>;
 
+  // Per-pair (bigram) mistakes - tracks which letter transitions caused errors
+  mistakesByPair: Record<string, number>;
+
   // Word-level data
   wordsTyped: number;
   wordsWithErrors: number;

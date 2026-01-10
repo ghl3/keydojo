@@ -10,6 +10,7 @@ interface TypingAreaProps {
   session: TypingSession;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onKeyUp: () => void;
+  showSpaceMarkers?: boolean;
 }
 
 // Split text into words (preserving spaces and punctuation with words)
@@ -45,7 +46,7 @@ function splitIntoWords(text: string): { word: string; startIndex: number }[] {
   return words;
 }
 
-export function TypingArea({ text, session, onKeyDown, onKeyUp }: TypingAreaProps) {
+export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers = false }: TypingAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const currentCharRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,28 +114,24 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp }: TypingAreaProp
         {words.map((wordData, wordIndex) => {
           const { word, startIndex } = wordData;
 
-          // Handle newlines
+          // Handle newlines (optional - user can skip by typing next char)
+          // No visible indicator - just a line break with cursor at start of next line
           if (word === "\n") {
             const charIndex = startIndex;
-            const typedChar = session.typedCharacters[charIndex];
             const isCurrent = charIndex === session.currentIndex;
-
-            let className = "char-pending";
-            if (typedChar?.state === "correct") className = "char-correct";
-            else if (typedChar?.state === "incorrect") className = "char-incorrect";
-            else if (typedChar?.state === "corrected") className = "char-corrected";
 
             return (
               <span key={`word-${wordIndex}`}>
-                <span
-                  ref={isCurrent ? currentCharRef : null}
-                  className={`${className} ${
-                    isCurrent ? "border-b-2 border-primary-500 animate-cursor-blink" : ""
-                  }`}
-                >
-                  {"↵"}
-                </span>
                 <br />
+                {/* When cursor is on newline, show it at start of next line */}
+                {isCurrent && (
+                  <span
+                    ref={currentCharRef}
+                    className="border-b-2 border-primary-500 animate-cursor-blink inline-block w-2"
+                  >
+                    {"\u200B"}{/* Zero-width space for cursor positioning */}
+                  </span>
+                )}
               </span>
             );
           }
@@ -144,6 +141,7 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp }: TypingAreaProp
             const charIndex = startIndex;
             const typedChar = session.typedCharacters[charIndex];
             const isCurrent = charIndex === session.currentIndex;
+            const isPending = !typedChar || typedChar.state === "pending";
 
             let className = "char-pending";
             if (typedChar?.state === "correct") className = "char-correct";
@@ -156,9 +154,20 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp }: TypingAreaProp
                 ref={isCurrent ? currentCharRef : null}
                 className={`${className} ${
                   isCurrent ? "border-b-2 border-primary-500 animate-cursor-blink" : ""
-                }`}
+                } relative`}
               >
                 {"\u00A0"}
+                {/* Subtle space marker with wing tips */}
+                {showSpaceMarkers && isPending && (
+                  <span className="absolute inset-x-0 bottom-0 flex items-end justify-center pointer-events-none opacity-30">
+                    <span className="w-full h-[1px] bg-gray-400 relative">
+                      {/* Left wing */}
+                      <span className="absolute left-0 bottom-0 w-[3px] h-[4px] border-l border-b border-gray-400" />
+                      {/* Right wing */}
+                      <span className="absolute right-0 bottom-0 w-[3px] h-[4px] border-r border-b border-gray-400" />
+                    </span>
+                  </span>
+                )}
               </span>
             );
           }

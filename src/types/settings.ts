@@ -9,6 +9,7 @@ export interface UserSettings {
   showKeyboard: boolean;
   showLiveStats: boolean;
   highlightNextKey: boolean;
+  showSpaceMarkers: boolean; // Show underscore markers for spaces
 
   // Text generation settings
   textLength: TextLengthOption;
@@ -43,6 +44,7 @@ export function getDefaultSettings(): UserSettings {
     showKeyboard: true,
     showLiveStats: true,
     highlightNextKey: true,
+    showSpaceMarkers: false,
     textLength: "medium",
     adaptiveDifficulty: true,
     adaptiveIntensity: 0.5,

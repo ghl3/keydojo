@@ -2,6 +2,7 @@ import type {
   UserStats,
   SessionResult,
   KeyStats,
+  PairStats,
   CharCategory,
   ContentType,
 } from "@/types";
@@ -109,12 +110,38 @@ export function aggregateSessionIntoStats(
   ctStats.errorsPerSentence = session.errorsPerSentence;
   ctStats.errorsPerParagraph = session.errorsPerParagraph;
 
+  // Update pair stats
+  const pairStats = { ...currentStats.pairStats };
+  for (const [pair, mistakes] of Object.entries(session.mistakesByPair || {})) {
+    if (!pairStats[pair]) {
+      pairStats[pair] = {
+        pair,
+        totalAttempts: 0,
+        mistakes: 0,
+        mistakeRate: 0,
+      };
+    }
+    pairStats[pair].totalAttempts += 1;
+    pairStats[pair].mistakes += mistakes;
+    pairStats[pair].mistakeRate =
+      pairStats[pair].totalAttempts > 0
+        ? pairStats[pair].mistakes / pairStats[pair].totalAttempts
+        : 0;
+  }
+
   // Calculate weakest keys (sorted by mistake rate, at least 5 attempts)
   const weakestKeys = Object.values(keyStats)
     .filter((k) => k.totalAttempts >= 5)
     .sort((a, b) => b.mistakeRate - a.mistakeRate)
     .slice(0, 10)
     .map((k) => k.key);
+
+  // Calculate weakest pairs (sorted by mistake rate, at least 3 attempts)
+  const weakestPairs = Object.values(pairStats)
+    .filter((p) => p.totalAttempts >= 3)
+    .sort((a, b) => b.mistakeRate - a.mistakeRate)
+    .slice(0, 10)
+    .map((p) => p.pair);
 
   // Calculate weakest categories
   const weakestCategories = (
@@ -144,7 +171,9 @@ export function aggregateSessionIntoStats(
     categoryStats,
     contentTypeStats,
     wordStats: currentStats.wordStats, // TODO: implement word-level tracking
+    pairStats,
     weakestKeys,
+    weakestPairs,
     weakestCategories,
     recentSessions,
   };

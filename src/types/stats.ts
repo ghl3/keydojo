@@ -51,6 +51,14 @@ export interface WordStats {
   averageTimeMs: number; // time to complete word
 }
 
+// Letter pair (bigram) statistics - tracks transitions between keys
+export interface PairStats {
+  pair: string; // e.g., "th", "er", "in"
+  totalAttempts: number;
+  mistakes: number;
+  mistakeRate: number;
+}
+
 // Data point for WPM history chart
 export interface WPMDataPoint {
   timestamp: number;
@@ -98,8 +106,12 @@ export interface UserStats {
   // Problematic words (sorted by mistake rate)
   wordStats: Record<string, WordStats>;
 
+  // Letter pair (bigram) stats for transition tracking
+  pairStats: Record<string, PairStats>;
+
   // Computed weak areas (for adaptive learning)
   weakestKeys: string[]; // sorted by mistakeRate desc
+  weakestPairs: string[]; // sorted by mistakeRate desc
   weakestCategories: CharCategory[]; // sorted by mistakeRate desc
 
   // Recent sessions for history view
@@ -132,7 +144,9 @@ export function getDefaultUserStats(): UserStats {
       paragraphs: createDefaultContentTypeStats("paragraphs"),
     },
     wordStats: {},
+    pairStats: {},
     weakestKeys: [],
+    weakestPairs: [],
     weakestCategories: [],
     recentSessions: [],
   };

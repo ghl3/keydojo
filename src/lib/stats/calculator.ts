@@ -108,8 +108,9 @@ export function calculateCategoryBreakdown(
 
     breakdown[category].chars++;
     breakdown[category].attempts += typed.attempts;
-    if (typed.state === "incorrect" || typed.state === "corrected") {
-      breakdown[category].mistakes += typed.attempts > 1 ? typed.attempts - 1 : 1;
+    // Count mistakes consistently: only "corrected" chars have mistakes, and mistakes = attempts - 1
+    if (typed.state === "corrected") {
+      breakdown[category].mistakes += typed.attempts - 1;
     }
   }
 

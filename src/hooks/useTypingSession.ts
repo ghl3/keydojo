@@ -82,6 +82,7 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
   const mistakesByKey = useRef<Record<string, number>>({});
+  const mistakesByPair = useRef<Record<string, number>>({});
 
   // Active typing time tracking
   const activeTypingTimeRef = useRef<number>(0);
@@ -160,6 +161,7 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
   useEffect(() => {
     setSession(createInitialSession(text, mode));
     mistakesByKey.current = {};
+    mistakesByPair.current = {};
     activeTypingTimeRef.current = 0;
     lastKeystrokeTimeRef.current = 0;
     setLiveStats({
@@ -205,6 +207,7 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
       if (e.key === "Escape") {
         setSession(createInitialSession(text, mode));
         mistakesByKey.current = {};
+    mistakesByPair.current = {};
         activeTypingTimeRef.current = 0;
         lastKeystrokeTimeRef.current = 0;
         return;
@@ -259,12 +262,80 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
         return;
       }
 
-      // Only process single character keys
-      if (e.key.length !== 1) return;
+      // Only process single character keys (and Enter for newlines)
+      if (e.key.length !== 1 && e.key !== "Enter") return;
 
       setActiveKeyWithTimeout(e.key);
 
-      const isCorrect = e.key === expectedChar;
+      // Handle optional newlines (skippable by typing the next character)
+      // If expected is newline but user typed the character after it, skip the newline
+      if (expectedChar === "\n" && e.key !== "\n") {
+        const nextChar = currentSession.text[currentIndex + 1];
+        if (nextChar && e.key === nextChar) {
+          // Skip the newline and process the typed character
+          setErrorKey(null);
+          setSession((prev) => {
+            const newTypedCharacters = [...prev.typedCharacters];
+
+            // Mark newline as skipped (correct without typing)
+            newTypedCharacters[currentIndex] = {
+              ...newTypedCharacters[currentIndex],
+              state: "correct",
+              typedAt: now,
+              attempts: 1,
+            };
+
+            // Mark the actual typed character as correct
+            newTypedCharacters[currentIndex + 1] = {
+              ...newTypedCharacters[currentIndex + 1],
+              state: "correct",
+              typedAt: now,
+              attempts: 1,
+            };
+
+            const newIndex = currentIndex + 2;
+            const isComplete = newIndex >= prev.text.length;
+
+            // Check boundaries for both skipped newline and typed char
+            let { wordsWithErrors, sentencesWithErrors, paragraphsWithErrors } = prev;
+            let { currentWordHasError, currentSentenceHasError, currentParagraphHasError } = prev;
+
+            // Check boundaries at newIndex
+            if (prev.wordBoundaries.includes(newIndex) || isComplete) {
+              if (currentWordHasError) wordsWithErrors++;
+              currentWordHasError = false;
+            }
+            if (prev.sentenceBoundaries.includes(newIndex) || isComplete) {
+              if (currentSentenceHasError) sentencesWithErrors++;
+              currentSentenceHasError = false;
+            }
+            if (prev.paragraphBoundaries.includes(newIndex) || isComplete) {
+              if (currentParagraphHasError) paragraphsWithErrors++;
+              currentParagraphHasError = false;
+            }
+
+            return {
+              ...prev,
+              currentIndex: newIndex,
+              typedCharacters: newTypedCharacters,
+              isComplete,
+              endedAt: isComplete ? now : undefined,
+              wordsWithErrors,
+              sentencesWithErrors,
+              paragraphsWithErrors,
+              currentWordHasError,
+              currentSentenceHasError,
+              currentParagraphHasError,
+            };
+          });
+          return;
+        }
+        // If typed char doesn't match next char, treat as wrong (they need to press Enter or the right char)
+      }
+
+      // Handle Enter key for newlines
+      const typedChar = e.key === "Enter" ? "\n" : e.key;
+      const isCorrect = typedChar === expectedChar;
 
       if (isCorrect) {
         setErrorKey(null);
@@ -331,6 +402,13 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
 
         // Track mistake for expected character
         mistakesByKey.current[expectedChar] = (mistakesByKey.current[expectedChar] || 0) + 1;
+
+        // Track mistake for letter pair (previous char + expected char)
+        if (currentIndex > 0) {
+          const prevChar = currentSession.text[currentIndex - 1];
+          const pair = prevChar + expectedChar;
+          mistakesByPair.current[pair] = (mistakesByPair.current[pair] || 0) + 1;
+        }
 
         setSession((prev) => {
           const newTypedCharacters = [...prev.typedCharacters];
@@ -401,6 +479,7 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
         totalMistakes,
         categoryBreakdown,
         mistakesByKey: { ...mistakesByKey.current },
+        mistakesByPair: { ...mistakesByPair.current },
         wordsTyped,
         wordsWithErrors: session.wordsWithErrors,
         errorsPerWord:
@@ -428,6 +507,7 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
   const reset = useCallback(() => {
     setSession(createInitialSession(text, mode));
     mistakesByKey.current = {};
+    mistakesByPair.current = {};
     activeTypingTimeRef.current = 0;
     lastKeystrokeTimeRef.current = 0;
     setLiveStats({

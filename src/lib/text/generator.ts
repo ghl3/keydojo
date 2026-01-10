@@ -1,4 +1,4 @@
-import type { SessionMode, CharCategory } from "@/types";
+import type { SessionMode, CharCategory, ContentType, CharacterTypeFlags } from "@/types";
 import type { TextLengthOption } from "@/types/settings";
 import { TEXT_LENGTH_CHARS } from "@/types/settings";
 import {
@@ -16,74 +16,143 @@ interface TextGeneratorOptions {
   adaptiveIntensity?: number; // 0-1, how much to weight weak keys
 }
 
-// Generate text based on options
-export function generateText(options: TextGeneratorOptions): string {
-  const { mode, length, weakKeys = [], adaptiveIntensity = 0.5 } = options;
+interface BaseTextOptions {
+  contentType: ContentType;
+  length: TextLengthOption;
+  weakKeys?: string[];
+  adaptiveIntensity?: number;
+}
+
+// Generate "canonical" base text with all features enabled
+// This text includes proper case, punctuation, and numbers
+export function generateBaseText(options: BaseTextOptions): string {
+  const { contentType, length, weakKeys = [], adaptiveIntensity = 0.5 } = options;
   const targetLength = TEXT_LENGTH_CHARS[length];
 
-  switch (mode.contentType) {
+  switch (contentType) {
     case "words":
-      return generateWords(mode, targetLength, weakKeys, adaptiveIntensity);
+      return generateBaseWords(targetLength, weakKeys, adaptiveIntensity);
     case "sentences":
-      return generateSentences(mode, targetLength, weakKeys, adaptiveIntensity);
+      return generateBaseSentences(targetLength, weakKeys, adaptiveIntensity);
     case "paragraphs":
-      return generateParagraphs(mode, targetLength, weakKeys, adaptiveIntensity);
+      return generateBaseParagraphs(targetLength, weakKeys, adaptiveIntensity);
     default:
-      return generateWords(mode, targetLength, weakKeys, adaptiveIntensity);
+      return generateBaseWords(targetLength, weakKeys, adaptiveIntensity);
   }
 }
 
-// Generate random words
-function generateWords(
-  mode: SessionMode,
+// Transform base text according to character type settings
+export function transformText(baseText: string, characterTypes: CharacterTypeFlags): string {
+  let result = baseText;
+
+  // Handle case transformations
+  if (!characterTypes.uppercaseLetters && characterTypes.lowercaseLetters) {
+    // Lowercase only
+    result = result.toLowerCase();
+  } else if (characterTypes.uppercaseLetters && !characterTypes.lowercaseLetters) {
+    // Uppercase only
+    result = result.toUpperCase();
+  }
+  // If both or neither, keep original case
+
+  // Remove punctuation if disabled (preserve newlines for sentence/paragraph structure)
+  if (!characterTypes.punctuation) {
+    result = result.replace(/[.,!?;:'"()\-]/g, "");
+  }
+
+  // Remove numbers if disabled
+  if (!characterTypes.numbers) {
+    result = result.replace(/\d+/g, "");
+  }
+
+  // Clean up: collapse multiple spaces (but preserve newlines), trim each line
+  result = result
+    .split("\n")
+    .map(line => line.replace(/ +/g, " ").trim())
+    .join("\n");
+
+  return result;
+}
+
+// Legacy function for backwards compatibility
+export function generateText(options: TextGeneratorOptions): string {
+  const baseText = generateBaseText({
+    contentType: options.mode.contentType,
+    length: options.length,
+    weakKeys: options.weakKeys,
+    adaptiveIntensity: options.adaptiveIntensity,
+  });
+  return transformText(baseText, options.mode.characterTypes);
+}
+
+// Generate base words with mixed case and occasional numbers
+function generateBaseWords(
   targetLength: number,
   weakKeys: string[],
   adaptiveIntensity: number
 ): string {
-  const wordPool = getFilteredWords(mode);
+  const wordPool = getAllWords();
   const words: string[] = [];
   let currentLength = 0;
+  let wordIndex = 0;
 
   while (currentLength < targetLength) {
     const word = selectWeightedWord(wordPool, weakKeys, adaptiveIntensity);
-    const transformedWord = transformWord(word, mode);
+    let result = word.toLowerCase();
 
-    words.push(transformedWord);
-    currentLength += transformedWord.length + 1; // +1 for space
+    // Occasionally capitalize (30% chance)
+    if (Math.random() < 0.3) {
+      result = result.charAt(0).toUpperCase() + result.slice(1);
+    }
+
+    // Add numbers occasionally (15% chance) - deterministic position based on word index
+    if (wordIndex % 7 === 3) {
+      const num = Math.floor(Math.random() * 100);
+      result = Math.random() < 0.5 ? `${result}${num}` : `${num}${result}`;
+    }
+
+    words.push(result);
+    currentLength += result.length + 1;
+    wordIndex++;
   }
 
   return words.join(" ");
 }
 
-// Generate sentences
-function generateSentences(
-  mode: SessionMode,
+// Generate base sentences with proper case, punctuation, and occasional numbers
+function generateBaseSentences(
   targetLength: number,
   weakKeys: string[],
   adaptiveIntensity: number
 ): string {
-  const sentences = mode.characterTypes.punctuation
-    ? [...SIMPLE_SENTENCES, ...PUNCTUATION_PHRASES]
-    : SIMPLE_SENTENCES.map((s) => s.replace(/[.,!?;:'"()-]/g, "").trim());
-
+  const sentences = [...SIMPLE_SENTENCES, ...PUNCTUATION_PHRASES];
   const result: string[] = [];
   let currentLength = 0;
+  let sentenceIndex = 0;
 
   while (currentLength < targetLength) {
-    // Weight sentences by weak key presence
-    const sentence = selectWeightedSentence(sentences, weakKeys, adaptiveIntensity);
-    let transformed = transformSentence(sentence, mode);
+    let sentence = selectWeightedSentence(sentences, weakKeys, adaptiveIntensity);
 
-    result.push(transformed);
-    currentLength += transformed.length + 1;
+    // Add a number to every 4th sentence
+    if (sentenceIndex % 4 === 2) {
+      const words = sentence.split(" ");
+      const insertIndex = Math.floor(words.length / 2);
+      const num = Math.floor(Math.random() * 1000);
+      words.splice(insertIndex, 0, num.toString());
+      sentence = words.join(" ");
+    }
+
+    result.push(sentence);
+    currentLength += sentence.length + 1;
+    sentenceIndex++;
   }
 
-  return result.join(" ");
+  // Join with newlines - these will be optional (skippable) in the typing UI
+  return result.join("\n");
 }
 
-// Generate paragraphs
-function generateParagraphs(
-  mode: SessionMode,
+// Generate base paragraphs with proper case, punctuation, and occasional numbers
+function generateBaseParagraphs(
   targetLength: number,
   weakKeys: string[],
   adaptiveIntensity: number
@@ -91,89 +160,34 @@ function generateParagraphs(
   const sentences = [...SIMPLE_SENTENCES, ...LONGER_SENTENCES];
   const paragraphs: string[] = [];
   let currentLength = 0;
+  let totalSentenceIndex = 0;
 
   while (currentLength < targetLength) {
-    // Each paragraph has 2-4 sentences
     const sentenceCount = 2 + Math.floor(Math.random() * 3);
     const paragraph: string[] = [];
 
     for (let i = 0; i < sentenceCount; i++) {
-      const sentence = selectWeightedSentence(sentences, weakKeys, adaptiveIntensity);
-      paragraph.push(transformSentence(sentence, mode));
+      let sentence = selectWeightedSentence(sentences, weakKeys, adaptiveIntensity);
+
+      // Add a number to every 4th sentence
+      if (totalSentenceIndex % 4 === 2) {
+        const words = sentence.split(" ");
+        const insertIndex = Math.floor(words.length / 2);
+        const num = Math.floor(Math.random() * 1000);
+        words.splice(insertIndex, 0, num.toString());
+        sentence = words.join(" ");
+      }
+
+      paragraph.push(sentence);
+      totalSentenceIndex++;
     }
 
     const paragraphText = paragraph.join(" ");
     paragraphs.push(paragraphText);
-    currentLength += paragraphText.length + 2; // +2 for paragraph break
+    currentLength += paragraphText.length + 2;
   }
 
   return paragraphs.join("\n\n");
-}
-
-// Get words filtered by character types
-function getFilteredWords(mode: SessionMode): string[] {
-  let words = mode.characterTypes.uppercaseLetters
-    ? getAllWords()
-    : getBasicWords();
-
-  // Filter based on character types
-  if (!mode.characterTypes.uppercaseLetters) {
-    words = words.map((w) => w.toLowerCase());
-  }
-
-  return words;
-}
-
-// Transform a word based on mode settings
-function transformWord(word: string, mode: SessionMode): string {
-  let result = word;
-
-  if (mode.characterTypes.lowercaseLetters && !mode.characterTypes.uppercaseLetters) {
-    result = result.toLowerCase();
-  } else if (mode.characterTypes.uppercaseLetters && !mode.characterTypes.lowercaseLetters) {
-    result = result.toUpperCase();
-  } else if (mode.characterTypes.uppercaseLetters && mode.characterTypes.lowercaseLetters) {
-    // Mixed case - occasionally capitalize first letter
-    if (Math.random() < 0.3) {
-      result = result.charAt(0).toUpperCase() + result.slice(1).toLowerCase();
-    }
-  }
-
-  // Add numbers occasionally if enabled
-  if (mode.characterTypes.numbers && Math.random() < 0.15) {
-    const num = Math.floor(Math.random() * 100);
-    result = Math.random() < 0.5 ? `${result}${num}` : `${num}${result}`;
-  }
-
-  return result;
-}
-
-// Transform a sentence based on mode settings
-function transformSentence(sentence: string, mode: SessionMode): string {
-  let result = sentence;
-
-  // Handle case
-  if (!mode.characterTypes.uppercaseLetters) {
-    result = result.toLowerCase();
-  } else if (!mode.characterTypes.lowercaseLetters) {
-    result = result.toUpperCase();
-  }
-
-  // Remove punctuation if not enabled
-  if (!mode.characterTypes.punctuation) {
-    result = result.replace(/[.,!?;:'"()-]/g, "");
-  }
-
-  // Add numbers if enabled
-  if (mode.characterTypes.numbers && Math.random() < 0.2) {
-    const words = result.split(" ");
-    const insertIndex = Math.floor(Math.random() * words.length);
-    const num = Math.floor(Math.random() * 1000);
-    words.splice(insertIndex, 0, num.toString());
-    result = words.join(" ");
-  }
-
-  return result.replace(/\s+/g, " ").trim();
 }
 
 // Select a word weighted by weak key presence
