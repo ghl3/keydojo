@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 interface SessionSummaryProps {
   result: SessionResult;
   onClose: () => void;
+  onDismiss: () => void;
 }
 
 // Color helpers for performance metrics
@@ -26,7 +27,7 @@ function getWpmColor(wpm: number): string {
   return "text-gray-600";
 }
 
-export function SessionSummary({ result, onClose }: SessionSummaryProps) {
+export function SessionSummary({ result, onClose, onDismiss }: SessionSummaryProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Focus button and handle keyboard
@@ -35,16 +36,21 @@ export function SessionSummary({ result, onClose }: SessionSummaryProps) {
     buttonRef.current?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Enter, Space, or Escape starts new session
-      if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+      // Enter or Space starts new session
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         onClose();
+      }
+      // Escape dismisses without new session
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onDismiss();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [onClose, onDismiss]);
   const formatDuration = (ms: number) => {
     const seconds = Math.round(ms / 1000);
     const minutes = Math.floor(seconds / 60);
@@ -79,7 +85,29 @@ export function SessionSummary({ result, onClose }: SessionSummaryProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-lg mx-4 p-6">
+      <Card className="w-full max-w-lg mx-4 p-6 relative">
+        {/* Dismiss button */}
+        <button
+          onClick={onDismiss}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Close"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+
         <h2 className="text-2xl font-bold text-primary-700 mb-4">
           Session Complete!
         </h2>

@@ -95,6 +95,10 @@ export default function Home() {
     reset();
   }, [reset]);
 
+  const handleDismissSummary = useCallback(() => {
+    setShowSummary(false);
+  }, []);
+
   // Show skeleton while loading settings from localStorage
   if (!settingsLoaded) {
     return (
@@ -194,7 +198,7 @@ export default function Home() {
 
       {/* Session Summary Modal */}
       {showSummary && lastResult && (
-        <SessionSummary result={lastResult} onClose={handleNewSession} />
+        <SessionSummary result={lastResult} onClose={handleNewSession} onDismiss={handleDismissSummary} />
       )}
     </main>
   );
