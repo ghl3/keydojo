@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import type { TypingSession } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -12,13 +12,86 @@ interface TypingAreaProps {
   onKeyUp: () => void;
 }
 
+// Split text into words (preserving spaces and punctuation with words)
+function splitIntoWords(text: string): { word: string; startIndex: number }[] {
+  const words: { word: string; startIndex: number }[] = [];
+  let currentWord = "";
+  let wordStart = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (char === " " || char === "\n") {
+      if (currentWord) {
+        words.push({ word: currentWord, startIndex: wordStart });
+        currentWord = "";
+      }
+      // Space/newline is its own "word"
+      words.push({ word: char, startIndex: i });
+      wordStart = i + 1;
+    } else {
+      if (!currentWord) {
+        wordStart = i;
+      }
+      currentWord += char;
+    }
+  }
+
+  // Don't forget the last word
+  if (currentWord) {
+    words.push({ word: currentWord, startIndex: wordStart });
+  }
+
+  return words;
+}
+
 export function TypingArea({ text, session, onKeyDown, onKeyUp }: TypingAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const currentCharRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Split text into words for non-breaking display
+  const words = useMemo(() => splitIntoWords(text), [text]);
 
   // Keep focus on the hidden input
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Auto-scroll to keep current character visible
+  useEffect(() => {
+    if (currentCharRef.current && containerRef.current) {
+      const container = containerRef.current;
+      const currentChar = currentCharRef.current;
+
+      // Get positions relative to container
+      const containerRect = container.getBoundingClientRect();
+      const charRect = currentChar.getBoundingClientRect();
+
+      // Calculate if character is outside visible area
+      const charTopRelative = charRect.top - containerRect.top + container.scrollTop;
+      const charBottomRelative = charTopRelative + charRect.height;
+
+      // Keep some padding (show context lines above and below)
+      const paddingTop = 40;
+      const paddingBottom = 60;
+
+      // Scroll if current char is too high
+      if (charTopRelative < container.scrollTop + paddingTop) {
+        container.scrollTo({
+          top: Math.max(0, charTopRelative - paddingTop),
+          behavior: "smooth",
+        });
+      }
+      // Scroll if current char is too low
+      else if (charBottomRelative > container.scrollTop + container.clientHeight - paddingBottom) {
+        container.scrollTo({
+          top: charBottomRelative - container.clientHeight + paddingBottom,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [session.currentIndex]);
 
   const handleClick = () => {
     inputRef.current?.focus();
@@ -31,42 +104,93 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp }: TypingAreaProp
       {/* Progress bar */}
       <ProgressBar progress={progress} className="mb-4" />
 
-      {/* Text display */}
+      {/* Text display with scrolling */}
       <div
+        ref={containerRef}
         onClick={handleClick}
-        className="font-mono text-lg leading-relaxed cursor-text min-h-[120px] select-none"
+        className="font-mono text-lg leading-relaxed cursor-text max-h-[180px] overflow-y-auto select-none"
       >
-        {text.split("").map((char, index) => {
-          const typedChar = session.typedCharacters[index];
-          const isCurrent = index === session.currentIndex;
+        {words.map((wordData, wordIndex) => {
+          const { word, startIndex } = wordData;
 
-          let className = "char-pending";
-          if (typedChar) {
-            if (typedChar.state === "correct") {
-              className = "char-correct";
-            } else if (typedChar.state === "incorrect") {
-              className = "char-incorrect";
-            } else if (typedChar.state === "corrected") {
-              className = "char-corrected";
-            }
+          // Handle newlines
+          if (word === "\n") {
+            const charIndex = startIndex;
+            const typedChar = session.typedCharacters[charIndex];
+            const isCurrent = charIndex === session.currentIndex;
+
+            let className = "char-pending";
+            if (typedChar?.state === "correct") className = "char-correct";
+            else if (typedChar?.state === "incorrect") className = "char-incorrect";
+            else if (typedChar?.state === "corrected") className = "char-corrected";
+
+            return (
+              <span key={`word-${wordIndex}`}>
+                <span
+                  ref={isCurrent ? currentCharRef : null}
+                  className={`${className} ${
+                    isCurrent ? "border-b-2 border-primary-500 animate-cursor-blink" : ""
+                  }`}
+                >
+                  {"↵"}
+                </span>
+                <br />
+              </span>
+            );
           }
 
-          // Handle special characters for display
-          let displayChar = char;
-          if (char === " ") {
-            displayChar = "\u00A0"; // Non-breaking space for visibility
-          } else if (char === "\n") {
-            displayChar = "↵";
+          // Handle spaces - render as regular inline element
+          if (word === " ") {
+            const charIndex = startIndex;
+            const typedChar = session.typedCharacters[charIndex];
+            const isCurrent = charIndex === session.currentIndex;
+
+            let className = "char-pending";
+            if (typedChar?.state === "correct") className = "char-correct";
+            else if (typedChar?.state === "incorrect") className = "char-incorrect";
+            else if (typedChar?.state === "corrected") className = "char-corrected";
+
+            return (
+              <span
+                key={`word-${wordIndex}`}
+                ref={isCurrent ? currentCharRef : null}
+                className={`${className} ${
+                  isCurrent ? "border-b-2 border-primary-500 animate-cursor-blink" : ""
+                }`}
+              >
+                {"\u00A0"}
+              </span>
+            );
           }
 
+          // Render word as inline-block to prevent mid-word wrapping
           return (
             <span
-              key={index}
-              className={`${className} ${
-                isCurrent ? "border-l-2 border-primary-500 -ml-px pl-px animate-cursor-blink" : ""
-              }`}
+              key={`word-${wordIndex}`}
+              className="inline-block whitespace-nowrap"
             >
-              {displayChar}
+              {word.split("").map((char, charOffset) => {
+                const charIndex = startIndex + charOffset;
+                const typedChar = session.typedCharacters[charIndex];
+                const isCurrent = charIndex === session.currentIndex;
+
+                let className = "char-pending";
+                if (typedChar?.state === "correct") className = "char-correct";
+                else if (typedChar?.state === "incorrect") className = "char-incorrect";
+                else if (typedChar?.state === "corrected") className = "char-corrected";
+
+                return (
+                  <span
+                    key={charIndex}
+                    ref={isCurrent ? currentCharRef : null}
+                    className={`${className} ${
+                      isCurrent ? "border-b-2 border-primary-500 animate-cursor-blink" : ""
+                    }`}
+                  >
+                    {char}
+                  </span>
+                );
+              })}
             </span>
           );
         })}

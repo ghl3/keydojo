@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { SessionResult, CharCategory } from "@/types";
 import { Card } from "@/components/ui/Card";
 
@@ -9,6 +10,24 @@ interface SessionSummaryProps {
 }
 
 export function SessionSummary({ result, onClose }: SessionSummaryProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus button and handle keyboard
+  useEffect(() => {
+    // Focus the button for immediate keyboard access
+    buttonRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Enter, Space, or Escape starts new session
+      if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
   const formatDuration = (ms: number) => {
     const seconds = Math.round(ms / 1000);
     const minutes = Math.floor(seconds / 60);
@@ -151,10 +170,11 @@ export function SessionSummary({ result, onClose }: SessionSummaryProps) {
 
         {/* Close button */}
         <button
+          ref={buttonRef}
           onClick={onClose}
-          className="w-full py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
+          className="w-full py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2"
         >
-          New Session
+          New Session <span className="text-primary-200 text-sm">(Enter)</span>
         </button>
       </Card>
     </div>

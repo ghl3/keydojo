@@ -45,9 +45,9 @@ const config: Config = {
         "key-pressed": "0 0 0 0 rgba(0, 0, 0, 0.1)",
       },
       keyframes: {
-        "cursor-blink": {
-          "0%, 50%": { opacity: "1" },
-          "51%, 100%": { opacity: "0" },
+        "cursor-underline-blink": {
+          "0%, 50%": { borderBottomColor: "rgb(201, 74, 74)" }, // primary-500
+          "51%, 100%": { borderBottomColor: "transparent" },
         },
         "key-press": {
           "0%": { transform: "translateY(0)" },
@@ -56,7 +56,7 @@ const config: Config = {
         },
       },
       animation: {
-        "cursor-blink": "cursor-blink 1s infinite",
+        "cursor-blink": "cursor-underline-blink 1s infinite",
         "key-press": "key-press 100ms ease-out",
       },
     },

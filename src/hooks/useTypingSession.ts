@@ -9,13 +9,15 @@ import type {
   LiveStats,
   CharCategory,
 } from "@/types";
-import { calculateLiveStats, calculateCategoryBreakdown } from "@/lib/stats/calculator";
+import { calculateCategoryBreakdown } from "@/lib/stats/calculator";
 import {
   findWordBoundaries,
   findSentenceBoundaries,
   findParagraphBoundaries,
-  classifyChar,
 } from "@/lib/stats/classifier";
+
+// If user doesn't type for this long, stop counting time
+const IDLE_THRESHOLD_MS = 2000;
 
 interface UseTypingSessionOptions {
   text: string;
@@ -51,6 +53,18 @@ function createInitialSession(text: string, mode: SessionMode): TypingSession {
   };
 }
 
+// Calculate WPM based on active typing time
+function calculateGrossWPM(charactersTyped: number, activeTimeMs: number): number {
+  const minutes = activeTimeMs / 60000;
+  const words = charactersTyped / 5;
+  return minutes > 0 ? Math.round(words / minutes) : 0;
+}
+
+// Calculate accuracy
+function calculateAccuracy(correctCount: number, totalAttempts: number): number {
+  return totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 100;
+}
+
 export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOptions) {
   const [session, setSession] = useState<TypingSession>(() =>
     createInitialSession(text, mode)
@@ -68,11 +82,30 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
   const mistakesByKey = useRef<Record<string, number>>({});
-  const lastKeyTime = useRef<number>(0);
+
+  // Active typing time tracking
+  const activeTypingTimeRef = useRef<number>(0);
+  const lastKeystrokeTimeRef = useRef<number>(0);
+
+  // Timeout refs for proper cleanup
+  const activeKeyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const errorKeyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use a ref to always have access to the latest session in callbacks
   const sessionRef = useRef(session);
   sessionRef.current = session;
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (activeKeyTimeoutRef.current) {
+        clearTimeout(activeKeyTimeoutRef.current);
+      }
+      if (errorKeyTimeoutRef.current) {
+        clearTimeout(errorKeyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Update next key
   useEffect(() => {
@@ -83,21 +116,52 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
     }
   }, [session.currentIndex, session.text, session.isComplete]);
 
-  // Update live stats periodically
+  // Update live stats periodically (only for display, not for WPM calculation)
   useEffect(() => {
     if (!session.startedAt || session.isComplete) return;
 
     const interval = setInterval(() => {
-      setLiveStats(calculateLiveStats(session));
+      const currentSession = sessionRef.current;
+      const typedCount = currentSession.currentIndex;
+
+      let correctCount = 0;
+      let mistakeCount = 0;
+      let totalAttempts = 0;
+
+      for (let i = 0; i < currentSession.currentIndex; i++) {
+        const char = currentSession.typedCharacters[i];
+        totalAttempts += char.attempts;
+        if (char.state === "correct") {
+          correctCount++;
+        } else if (char.state === "incorrect") {
+          mistakeCount++;
+        } else if (char.state === "corrected") {
+          correctCount++;
+          mistakeCount += char.attempts - 1;
+        }
+      }
+
+      setLiveStats({
+        elapsedTime: activeTypingTimeRef.current,
+        currentWPM: calculateGrossWPM(typedCount, activeTypingTimeRef.current),
+        currentAccuracy: calculateAccuracy(correctCount, totalAttempts),
+        charactersTyped: typedCount,
+        mistakeCount,
+        progress: currentSession.text.length > 0
+          ? (typedCount / currentSession.text.length) * 100
+          : 0,
+      });
     }, 100);
 
     return () => clearInterval(interval);
-  }, [session]);
+  }, [session.startedAt, session.isComplete]);
 
   // Reset when text changes
   useEffect(() => {
     setSession(createInitialSession(text, mode));
     mistakesByKey.current = {};
+    activeTypingTimeRef.current = 0;
+    lastKeystrokeTimeRef.current = 0;
     setLiveStats({
       elapsedTime: 0,
       currentWPM: 0,
@@ -107,6 +171,28 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
       progress: 0,
     });
   }, [text, mode]);
+
+  // Helper to set active key with proper timeout management
+  const setActiveKeyWithTimeout = useCallback((key: string) => {
+    if (activeKeyTimeoutRef.current) {
+      clearTimeout(activeKeyTimeoutRef.current);
+    }
+    setActiveKey(key);
+    activeKeyTimeoutRef.current = setTimeout(() => {
+      setActiveKey(null);
+    }, 150);
+  }, []);
+
+  // Helper to set error key with proper timeout management
+  const setErrorKeyWithTimeout = useCallback((key: string) => {
+    if (errorKeyTimeoutRef.current) {
+      clearTimeout(errorKeyTimeoutRef.current);
+    }
+    setErrorKey(key);
+    errorKeyTimeoutRef.current = setTimeout(() => {
+      setErrorKey(null);
+    }, 200);
+  }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -119,6 +205,8 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
       if (e.key === "Escape") {
         setSession(createInitialSession(text, mode));
         mistakesByKey.current = {};
+        activeTypingTimeRef.current = 0;
+        lastKeystrokeTimeRef.current = 0;
         return;
       }
 
@@ -129,6 +217,16 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
       if (currentSession.isComplete) return;
 
       const now = Date.now();
+
+      // Update active typing time
+      if (lastKeystrokeTimeRef.current > 0) {
+        const gap = now - lastKeystrokeTimeRef.current;
+        // Only count time if gap is less than idle threshold
+        if (gap < IDLE_THRESHOLD_MS) {
+          activeTypingTimeRef.current += gap;
+        }
+      }
+      lastKeystrokeTimeRef.current = now;
 
       // Start session on first keystroke
       if (!currentSession.startedAt) {
@@ -157,16 +255,14 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
             };
           });
         }
-        setActiveKey("Backspace");
-        setTimeout(() => setActiveKey(null), 100);
+        setActiveKeyWithTimeout("Backspace");
         return;
       }
 
       // Only process single character keys
       if (e.key.length !== 1) return;
 
-      setActiveKey(e.key);
-      setTimeout(() => setActiveKey(null), 100);
+      setActiveKeyWithTimeout(e.key);
 
       const isCorrect = e.key === expectedChar;
 
@@ -231,8 +327,7 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
         });
       } else {
         // Wrong key
-        setErrorKey(e.key);
-        setTimeout(() => setErrorKey(null), 200);
+        setErrorKeyWithTimeout(e.key);
 
         // Track mistake for expected character
         mistakesByKey.current[expectedChar] = (mistakesByKey.current[expectedChar] || 0) + 1;
@@ -254,32 +349,28 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
           };
         });
       }
-
-      lastKeyTime.current = now;
     },
-    [text, mode] // Removed session from deps - using sessionRef instead
+    [text, mode, setActiveKeyWithTimeout, setErrorKeyWithTimeout]
   );
 
   const handleKeyUp = useCallback(() => {
-    setActiveKey(null);
+    // Don't clear immediately - let the timeout handle it
   }, []);
 
   // Build session result when complete
   useEffect(() => {
     if (session.isComplete && onComplete && session.endedAt) {
-      const duration = session.endedAt - session.startedAt;
+      // Use active typing time for duration
+      const duration = activeTypingTimeRef.current;
 
       // Calculate totals
       let totalMistakes = 0;
-      let correctCount = 0;
+      let totalAttempts = 0;
 
       for (const char of session.typedCharacters) {
-        if (char.state === "correct") {
-          correctCount++;
-        } else if (char.state === "incorrect") {
-          totalMistakes++;
-        } else if (char.state === "corrected") {
-          correctCount++;
+        totalAttempts += char.attempts;
+        if (char.state === "corrected") {
+          // Character was typed wrong at least once before getting it right
           totalMistakes += char.attempts - 1;
         }
       }
@@ -303,7 +394,9 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
         netWPM: Math.round(
           ((session.text.length / 5) - totalMistakes) / (duration / 60000)
         ),
-        accuracy: Math.round((correctCount / session.text.length) * 100),
+        accuracy: totalAttempts > 0
+          ? Math.round(((totalAttempts - totalMistakes) / totalAttempts) * 100)
+          : 100,
         totalCharacters: session.text.length,
         totalMistakes,
         categoryBreakdown,
@@ -330,11 +423,13 @@ export function useTypingSession({ text, mode, onComplete }: UseTypingSessionOpt
 
       onComplete(result);
     }
-  }, [session.isComplete, session.endedAt, onComplete]);
+  }, [session.isComplete, session.endedAt, onComplete, session]);
 
   const reset = useCallback(() => {
     setSession(createInitialSession(text, mode));
     mistakesByKey.current = {};
+    activeTypingTimeRef.current = 0;
+    lastKeystrokeTimeRef.current = 0;
     setLiveStats({
       elapsedTime: 0,
       currentWPM: 0,
