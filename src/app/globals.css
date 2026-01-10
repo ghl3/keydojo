@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cream-50 text-gray-900 antialiased;
+  }
+}
+
+@layer components {
+  /* Character states in typing area */
+  .char-pending {
+    @apply text-gray-400;
+  }
+  .char-correct {
+    @apply text-gray-900;
+  }
+  .char-incorrect {
+    @apply text-red-600 bg-red-100;
+  }
+  .char-corrected {
+    @apply text-gray-900 underline decoration-primary-300;
+  }
+
+  /* Keyboard key states */
+  .key-default {
+    @apply bg-white border border-cream-300 shadow-key rounded-md transition-all duration-75;
+  }
+  .key-active {
+    @apply bg-primary-100 border-primary-400 shadow-key-pressed transform translate-y-0.5;
+  }
+  .key-next {
+    @apply bg-primary-50 border-primary-300;
+  }
+  .key-error {
+    @apply bg-red-100 border-red-400;
+  }
+  .key-weak {
+    @apply bg-cream-200;
+  }
+}
