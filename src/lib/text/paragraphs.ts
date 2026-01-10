@@ -446,6 +446,116 @@ export const TRAVEL_PARAGRAPHS: string[][] = [
 ];
 
 // =============================================================================
+// STATISTICS AND BUSINESS PARAGRAPHS
+// Paragraphs with naturally-occurring numbers (statistics, dates, prices)
+// =============================================================================
+
+export const STATISTICS_PARAGRAPHS: string[][] = [
+  // Quarterly report
+  [
+    "The quarterly report showed impressive results across all departments.",
+    "Revenue increased by 23% compared to the same period last year.",
+    "The customer base grew from 50,000 to 72,500 active users.",
+    "Operating costs were reduced by $2.3 million through efficiency improvements.",
+  ],
+
+  // Market research
+  [
+    "The survey collected responses from 2,847 participants across 15 countries.",
+    "Approximately 68% of respondents preferred the new design.",
+    "User satisfaction scores improved from 3.2 to 4.1 out of 5 stars.",
+    "The margin of error was plus or minus 2.5 percentage points.",
+  ],
+
+  // Event planning
+  [
+    "The conference will be held on October 12-14, 2024 at the convention center.",
+    "Registration opens at 8:30 AM each day in the main lobby.",
+    "The venue can accommodate up to 750 attendees across 12 breakout rooms.",
+    "Early bird tickets are priced at $299, saving $100 off regular admission.",
+  ],
+
+  // Sales performance
+  [
+    "Sales for the third quarter exceeded expectations by 18%.",
+    "The average transaction value increased from $45 to $67.",
+    "The team closed 156 new accounts, up from 89 the previous quarter.",
+    "Customer retention improved to 94%, the highest rate in 5 years.",
+  ],
+
+  // Health statistics
+  [
+    "The study followed 10,000 participants over a period of 15 years.",
+    "Those who exercised at least 30 minutes daily had 45% lower risk.",
+    "Average blood pressure decreased from 140/90 to 125/82 mmHg.",
+    "The results were published in the May 2024 issue of the journal.",
+  ],
+
+  // Weather report
+  [
+    "Temperatures will range from 18 to 24 degrees Celsius this week.",
+    "There is a 60% chance of rain on Wednesday afternoon.",
+    "Wind speeds are expected to reach 35 kilometers per hour.",
+    "The UV index will be high at 8, so sunscreen is recommended.",
+  ],
+];
+
+// =============================================================================
+// EVENTS AND SCHEDULING PARAGRAPHS
+// Paragraphs with times, dates, and scheduled events
+// =============================================================================
+
+export const EVENTS_PARAGRAPHS: string[][] = [
+  // Meeting schedule
+  [
+    "The team meeting is scheduled for Monday at 10:00 AM.",
+    "Please review the 15-page report before the 2:30 PM deadline.",
+    "The presentation will last approximately 45 minutes plus Q&A.",
+    "A follow-up call is planned for March 22nd at 3:00 PM.",
+  ],
+
+  // Flight itinerary
+  [
+    "Flight 247 departs from Gate B12 at 6:45 AM sharp.",
+    "The flight duration is approximately 3 hours and 20 minutes.",
+    "Passengers should arrive at least 2 hours before departure.",
+    "Baggage claim is located on Level 1, carousel 7.",
+  ],
+
+  // Restaurant reservation
+  [
+    "The dinner reservation is confirmed for 7:30 PM on Saturday.",
+    "The restaurant is located at 425 Main Street, about 15 minutes away.",
+    "The tasting menu is $85 per person, wine pairing is an additional $45.",
+    "They can accommodate parties of up to 8 people.",
+  ],
+
+  // Class schedule
+  [
+    "The morning class begins at 9:00 AM and ends at 12:15 PM.",
+    "There is a 15-minute break at 10:30 AM.",
+    "The afternoon session runs from 1:30 PM to 4:45 PM.",
+    "Final exams are scheduled for December 15-19, 2024.",
+  ],
+
+  // Project timeline
+  [
+    "The project kickoff meeting was held on January 8, 2024.",
+    "Phase 1 deliverables are due by February 28th.",
+    "The testing phase will run from March 15 to April 10.",
+    "Final launch is targeted for May 1, 2024.",
+  ],
+
+  // Store hours
+  [
+    "The store is open Monday through Friday from 9:00 AM to 9:00 PM.",
+    "Saturday hours are 10:00 AM to 6:00 PM.",
+    "Sunday hours are 12:00 PM to 5:00 PM.",
+    "Holiday hours may vary; check our website for updates.",
+  ],
+];
+
+// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 
@@ -460,6 +570,8 @@ export function getAllParagraphs(): string[][] {
     ...CREATIVE_PARAGRAPHS,
     ...HEALTH_PARAGRAPHS,
     ...TRAVEL_PARAGRAPHS,
+    ...STATISTICS_PARAGRAPHS,
+    ...EVENTS_PARAGRAPHS,
   ];
 }
 

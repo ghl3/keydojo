@@ -50,16 +50,18 @@ export default function Home() {
   // Extract mode from settings for convenience
   const mode = settings.defaultMode;
 
-  // Generate base text - only regenerates when content type, length, or textKey changes
+  // Generate base text - only regenerates when content type, length, character types, or textKey changes
   // This is the "canonical" text with all features (case, punctuation, numbers)
+  // characterTypes is passed to handle edge cases like numbers-only or punctuation-only modes
   const baseText = useMemo(() => {
     return generateBaseText({
       contentType: mode.contentType,
       length: settings.textLength,
       weakKeys: settings.adaptiveDifficulty ? userStats.weakestKeys : [],
       adaptiveIntensity: settings.adaptiveDifficulty ? settings.adaptiveIntensity : 0,
+      characterTypes: mode.characterTypes,
     });
-  }, [mode.contentType, settings.textLength, settings.adaptiveDifficulty, settings.adaptiveIntensity, textKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode.contentType, mode.characterTypes, settings.textLength, settings.adaptiveDifficulty, settings.adaptiveIntensity, textKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Transform base text based on character type settings
   // This updates when toggling uppercase, punctuation, numbers, etc.

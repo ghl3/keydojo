@@ -5,6 +5,9 @@
  * Organized by length and complexity for progressive difficulty.
  */
 
+import { getAllNumberSentences } from "./numbersContent";
+import { getAllPunctuationSentences } from "./punctuationContent";
+
 // =============================================================================
 // SIMPLE SENTENCES
 // Short sentences (5-10 words) - good for beginners and warm-up
@@ -324,6 +327,8 @@ export function getAllSentences(): string[] {
     ...PANGRAM_SENTENCES,
     ...PUNCTUATION_SENTENCES,
     ...PROVERBS,
+    ...getAllNumberSentences(),
+    ...getAllPunctuationSentences(),
   ];
 }
 

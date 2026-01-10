@@ -57,6 +57,7 @@ export function getDefaultSettings(): UserSettings {
         uppercaseLetters: false,
         numbers: false,
         punctuation: false,
+        spaces: true,
       },
       contentType: "words",
     },

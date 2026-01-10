@@ -21,6 +21,7 @@ export interface CharacterTypeFlags {
   uppercaseLetters: boolean;
   numbers: boolean;
   punctuation: boolean;
+  spaces: boolean;
 }
 
 export type ContentType = "words" | "sentences" | "paragraphs" | "code";

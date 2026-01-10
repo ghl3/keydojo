@@ -62,6 +62,11 @@ export function ModeSelector({ mode, onChange }: ModeSelectorProps) {
               checked={mode.characterTypes.punctuation}
               onChange={(v) => handleCharacterTypeChange("punctuation", v)}
             />
+            <Toggle
+              label="Spaces"
+              checked={mode.characterTypes.spaces}
+              onChange={(v) => handleCharacterTypeChange("spaces", v)}
+            />
           </div>
         </div>
 

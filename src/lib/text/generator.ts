@@ -5,6 +5,8 @@ import { getAllWords } from "./wordLists";
 import { getAllSentences } from "./sentences";
 import { getAllParagraphs } from "./paragraphs";
 import { getAllCodeSnippets } from "./codeSnippets";
+import { getNumberSequences, getAllNumberSentences } from "./numbersContent";
+import { getPunctuationDrills, getAllPunctuationSentences } from "./punctuationContent";
 
 interface TextGeneratorOptions {
   mode: SessionMode;
@@ -18,13 +20,43 @@ interface BaseTextOptions {
   length: TextLengthOption;
   weakKeys?: string[];
   adaptiveIntensity?: number;
+  characterTypes?: CharacterTypeFlags;
+}
+
+// Check if this is a numbers-only mode (numbers enabled, no letters)
+function isNumbersOnlyMode(characterTypes?: CharacterTypeFlags): boolean {
+  if (!characterTypes) return false;
+  return (
+    characterTypes.numbers &&
+    !characterTypes.lowercaseLetters &&
+    !characterTypes.uppercaseLetters
+  );
+}
+
+// Check if this is a punctuation-only mode (punctuation enabled, no letters/numbers)
+function isPunctuationOnlyMode(characterTypes?: CharacterTypeFlags): boolean {
+  if (!characterTypes) return false;
+  return (
+    characterTypes.punctuation &&
+    !characterTypes.lowercaseLetters &&
+    !characterTypes.uppercaseLetters &&
+    !characterTypes.numbers
+  );
 }
 
 // Generate "canonical" base text with all features enabled
 // This text includes proper case, punctuation, and numbers
 export function generateBaseText(options: BaseTextOptions): string {
-  const { contentType, length, weakKeys = [], adaptiveIntensity = 0.5 } = options;
+  const { contentType, length, weakKeys = [], adaptiveIntensity = 0.5, characterTypes } = options;
   const targetLength = TEXT_LENGTH_CHARS[length];
+
+  // Handle edge cases for special character-only modes
+  if (isNumbersOnlyMode(characterTypes)) {
+    return generateNumbersContent(targetLength);
+  }
+  if (isPunctuationOnlyMode(characterTypes)) {
+    return generatePunctuationContent(targetLength);
+  }
 
   switch (contentType) {
     case "words":
@@ -64,9 +96,15 @@ export function transformText(
   }
   // If both or neither, keep original case
 
+  // Remove all letters if neither lowercase nor uppercase is enabled
+  // This ensures numbers-only and punctuation-only modes have no letters
+  if (!characterTypes.lowercaseLetters && !characterTypes.uppercaseLetters) {
+    result = result.replace(/[a-zA-Z]/g, "");
+  }
+
   // Remove punctuation if disabled (preserve newlines for sentence/paragraph structure)
   if (!characterTypes.punctuation) {
-    result = result.replace(/[.,!?;:'"()\-]/g, "");
+    result = result.replace(/[.,!?;:'"()\-@#$%^&*~\/\\+=<>\[\]{}|`_]/g, "");
   }
 
   // Remove numbers if disabled
@@ -74,10 +112,21 @@ export function transformText(
     result = result.replace(/\d+/g, "");
   }
 
+  // Remove spaces if disabled (but preserve newlines for structure)
+  if (!characterTypes.spaces) {
+    result = result.replace(/ /g, "");
+  }
+
   // Clean up: collapse multiple spaces (but preserve newlines), trim each line
   result = result
     .split("\n")
     .map(line => line.replace(/ +/g, " ").trim())
+    .join("\n");
+
+  // Remove empty lines that may result from transformations
+  result = result
+    .split("\n")
+    .filter(line => line.length > 0)
     .join("\n");
 
   return result;
@@ -94,7 +143,7 @@ export function generateText(options: TextGeneratorOptions): string {
   return transformText(baseText, options.mode.characterTypes, options.mode.contentType);
 }
 
-// Generate base words with mixed case and occasional numbers
+// Generate base words with mixed case (no artificial numbers)
 function generateBaseWords(
   targetLength: number,
   weakKeys: string[],
@@ -103,7 +152,6 @@ function generateBaseWords(
   const wordPool = getAllWords();
   const words: string[] = [];
   let currentLength = 0;
-  let wordIndex = 0;
 
   while (currentLength < targetLength) {
     const word = selectWeightedItem(wordPool, weakKeys, adaptiveIntensity);
@@ -114,21 +162,14 @@ function generateBaseWords(
       result = result.charAt(0).toUpperCase() + result.slice(1);
     }
 
-    // Add numbers occasionally (15% chance) - deterministic position based on word index
-    if (wordIndex % 7 === 3) {
-      const num = Math.floor(Math.random() * 100);
-      result = Math.random() < 0.5 ? `${result}${num}` : `${num}${result}`;
-    }
-
     words.push(result);
     currentLength += result.length + 1;
-    wordIndex++;
   }
 
   return words.join(" ");
 }
 
-// Generate base sentences with proper case, punctuation, and occasional numbers
+// Generate base sentences with proper case and punctuation (no artificial numbers)
 function generateBaseSentences(
   targetLength: number,
   weakKeys: string[],
@@ -137,30 +178,18 @@ function generateBaseSentences(
   const sentences = getAllSentences();
   const result: string[] = [];
   let currentLength = 0;
-  let sentenceIndex = 0;
 
   while (currentLength < targetLength) {
-    let sentence = selectWeightedItem(sentences, weakKeys, adaptiveIntensity);
-
-    // Add a number to every 4th sentence
-    if (sentenceIndex % 4 === 2) {
-      const words = sentence.split(" ");
-      const insertIndex = Math.floor(words.length / 2);
-      const num = Math.floor(Math.random() * 1000);
-      words.splice(insertIndex, 0, num.toString());
-      sentence = words.join(" ");
-    }
-
+    const sentence = selectWeightedItem(sentences, weakKeys, adaptiveIntensity);
     result.push(sentence);
     currentLength += sentence.length + 1;
-    sentenceIndex++;
   }
 
   // Join with newlines - these will be optional (skippable) in the typing UI
   return result.join("\n");
 }
 
-// Generate base paragraphs using the structured paragraph data
+// Generate base paragraphs using the structured paragraph data (no artificial numbers)
 function generateBaseParagraphs(
   targetLength: number,
   weakKeys: string[],
@@ -169,33 +198,59 @@ function generateBaseParagraphs(
   const paragraphArrays = getAllParagraphs();
   const paragraphs: string[] = [];
   let currentLength = 0;
-  let totalSentenceIndex = 0;
 
   while (currentLength < targetLength) {
     // Select a paragraph (array of sentences)
     const paragraphSentences = selectWeightedItem(paragraphArrays, weakKeys, adaptiveIntensity);
 
-    // Optionally add numbers to some sentences
-    const processedSentences = paragraphSentences.map(sentence => {
-      if (totalSentenceIndex % 4 === 2) {
-        const words = sentence.split(" ");
-        const insertIndex = Math.floor(words.length / 2);
-        const num = Math.floor(Math.random() * 1000);
-        words.splice(insertIndex, 0, num.toString());
-        sentence = words.join(" ");
-      }
-      totalSentenceIndex++;
-      return sentence;
-    });
-
     // Join sentences within paragraph with spaces
-    const paragraphText = processedSentences.join(" ");
+    const paragraphText = paragraphSentences.join(" ");
     paragraphs.push(paragraphText);
     currentLength += paragraphText.length + 2;
   }
 
   // Join paragraphs with double newlines
   return paragraphs.join("\n\n");
+}
+
+// Generate content for numbers-only mode
+function generateNumbersContent(targetLength: number): string {
+  const sequences = getNumberSequences();
+  const result: string[] = [];
+  let currentLength = 0;
+
+  // Shuffle to get variety
+  const shuffled = [...sequences].sort(() => Math.random() - 0.5);
+  let index = 0;
+
+  while (currentLength < targetLength) {
+    const sequence = shuffled[index % shuffled.length];
+    result.push(sequence);
+    currentLength += sequence.length + 1;
+    index++;
+  }
+
+  return result.join("\n");
+}
+
+// Generate content for punctuation-only mode
+function generatePunctuationContent(targetLength: number): string {
+  const drills = getPunctuationDrills();
+  const result: string[] = [];
+  let currentLength = 0;
+
+  // Shuffle to get variety
+  const shuffled = [...drills].sort(() => Math.random() - 0.5);
+  let index = 0;
+
+  while (currentLength < targetLength) {
+    const drill = shuffled[index % shuffled.length];
+    result.push(drill);
+    currentLength += drill.length + 1;
+    index++;
+  }
+
+  return result.join("\n");
 }
 
 // Generate base code snippets
