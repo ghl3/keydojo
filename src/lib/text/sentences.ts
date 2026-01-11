@@ -5,8 +5,6 @@
  * Organized by length and complexity for progressive difficulty.
  */
 
-import { getAllNumberSentences } from "./numbersContent";
-import { getAllPunctuationSentences } from "./punctuationContent";
 import { getAllExpandedSentences } from "./content/expandedSentences";
 
 // =============================================================================
@@ -316,6 +314,235 @@ export const PROVERBS = [
 ];
 
 // =============================================================================
+// SENTENCES WITH NUMBERS
+// Sentences containing dates, times, prices, quantities, statistics, measurements
+// =============================================================================
+
+// Sentences with dates and times
+export const SENTENCES_WITH_DATES = [
+  "The project deadline is March 15, 2024.",
+  "She was born on July 4, 1990.",
+  "The meeting is scheduled for December 12th.",
+  "We launched the product on January 1, 2023.",
+  "The contract expires on September 30, 2025.",
+  "Independence Day falls on July 4th every year.",
+  "The fiscal year ends on March 31st.",
+  "Our anniversary is coming up on August 15th.",
+  "The report is due by October 1, 2024.",
+  "The conference runs from June 5-7, 2024.",
+  "Her birthday is on November 22nd.",
+  "The deadline was extended to April 30th.",
+];
+
+export const SENTENCES_WITH_TIMES = [
+  "The meeting starts at 3:30 PM.",
+  "I wake up at 6:45 every morning.",
+  "The store closes at 9:00 PM sharp.",
+  "Lunch break is from 12:00 to 1:00.",
+  "The flight departs at 7:15 AM.",
+  "Office hours are 9:00 AM to 5:00 PM.",
+  "The movie begins at 8:30 tonight.",
+  "Class starts promptly at 10:00 AM.",
+  "The train arrives at 4:45 PM.",
+  "We should meet at 2:30 in the lobby.",
+  "The alarm is set for 5:30 AM.",
+  "Happy hour starts at 5:00 PM.",
+];
+
+// Sentences with prices and currency
+export const SENTENCES_WITH_PRICES = [
+  "The new laptop costs $1,299 plus tax.",
+  "Coffee is only $4.99 at the corner cafe.",
+  "They raised $50,000 for the charity.",
+  "The subscription is $9.99 per month.",
+  "Rent increased by $250 this year.",
+  "The total comes to $127.50 with shipping.",
+  "Gas prices dropped to $3.45 per gallon.",
+  "The concert tickets were $75 each.",
+  "She saved $500 by buying in bulk.",
+  "The budget for the project is $25,000.",
+  "Dinner for two cost about $85.",
+  "The car repair estimate was $1,200.",
+];
+
+// Sentences with quantities
+export const SENTENCES_WITH_QUANTITIES = [
+  "There were 15 volunteers at the event.",
+  "The recipe calls for 3 cups of flour.",
+  "She ran 5 kilometers every morning.",
+  "We need to order 200 more units.",
+  "The class has 28 students enrolled.",
+  "I drank 8 glasses of water today.",
+  "The team scored 7 goals in the match.",
+  "There are 52 weeks in a year.",
+  "He read 12 books last month.",
+  "The package contains 24 items.",
+  "We planted 50 trees in the park.",
+  "The survey collected 2,500 responses.",
+];
+
+// Sentences with statistics and percentages
+export const SENTENCES_WITH_STATISTICS = [
+  "Sales increased by 25% this quarter.",
+  "About 75% of participants agreed.",
+  "The success rate improved to 94%.",
+  "Customer satisfaction is at 87%.",
+  "Only 1 in 4 applicants were selected.",
+  "Revenue grew by 15% year over year.",
+  "The error rate dropped to 0.5%.",
+  "Approximately 60% voted in favor.",
+  "Market share increased to 32%.",
+  "The completion rate was 98%.",
+  "About 80% of users prefer the new design.",
+  "Productivity improved by 40%.",
+];
+
+// Sentences with measurements
+export const SENTENCES_WITH_MEASUREMENTS = [
+  "The building is 324 meters tall.",
+  "The temperature reached 32 degrees today.",
+  "The package weighs 2.5 kilograms.",
+  "The hiking trail is 8.5 kilometers long.",
+  "Water boils at 100 degrees Celsius.",
+  "The room measures 15 by 20 feet.",
+  "She is 1.75 meters tall.",
+  "The speed limit is 65 miles per hour.",
+  "The recipe needs 250 milliliters of milk.",
+  "The marathon is 42.195 kilometers.",
+  "Average rainfall is 50 centimeters annually.",
+  "The cable is 3 meters long.",
+];
+
+// =============================================================================
+// RICH PUNCTUATION SENTENCES
+// Sentences with varied punctuation for special character practice
+// =============================================================================
+
+export const RICH_PUNCTUATION_SENTENCES = [
+  // Questions and exclamations
+  "Wait... what?! I can't believe it!",
+  "Really? Are you absolutely sure about that?",
+  "No way! That's incredible - truly amazing!",
+  "What?! How did that happen?",
+  "Is this real? I mean... seriously?!",
+
+  // Quoted speech
+  "She asked, \"Did you really say 'never'?\"",
+  "He replied, \"Of course! Why wouldn't I?\"",
+  "\"Well,\" she said, \"that's interesting.\"",
+  "\"Stop!\" he shouted. \"Don't move!\"",
+  "She whispered, \"It's a secret... don't tell anyone.\"",
+
+  // Lists and semicolons
+  "We need eggs, milk, bread; also cheese, butter, and yogurt.",
+  "The colors were: red, blue, green; purple, orange, and yellow.",
+  "First, gather materials; second, read instructions; third, begin.",
+  "Pack the following: shirts, pants, socks; a jacket; and shoes.",
+
+  // Parenthetical information
+  "The meeting (originally at 3:00) was moved to 4:30.",
+  "His car (a red convertible) was parked outside.",
+  "The book - her favorite one - was on the shelf.",
+  "The recipe (see page 42) calls for three cups.",
+  "My friend (you met her last week) called today.",
+
+  // Technical and email-like
+  "Contact us at: support@example.com or sales@company.org.",
+  "Visit https://www.example.com/page for more details.",
+  "Press Ctrl+Alt+Delete to continue; then select 'Restart'.",
+  "The file is located at: /home/user/documents/file.txt.",
+  "Run the command: npm install --save-dev @types/node.",
+
+  // Complex punctuation combinations
+  "Yes! No? Maybe... I just don't know anymore.",
+  "Think about it: why? how? when? where? who?",
+  "The answer - believe it or not - is quite simple.",
+  "\"Perfect!\" she exclaimed; \"Just what I needed!\"",
+  "Warning: do NOT (under any circumstances) press that button!",
+
+  // Dashes and hyphens
+  "The well-known author - famous for her mystery novels - arrived.",
+  "It's a once-in-a-lifetime opportunity; don't miss it!",
+  "The old-fashioned recipe - handed down for generations - was perfect.",
+  "Self-improvement requires self-discipline and self-awareness.",
+  "The up-to-date information is available twenty-four/seven.",
+
+  // Colons and semicolons
+  "Remember this: practice makes perfect; perfection takes time.",
+  "The rules are simple: be kind; be honest; be helpful.",
+  "Consider the options: stay or go; act or wait; speak or listen.",
+  "Here's the truth: life is short; make it count.",
+
+  // Apostrophes and contractions
+  "It's not that I can't; it's that I won't - there's a difference!",
+  "They're going to their house over there; they've done it before.",
+  "She's already said she'll be there; she's never been late.",
+  "We've got what you're looking for; it's right here!",
+
+  // Mixed complex sentences
+  "The report (dated 12/15/2024) showed: sales up 25%; costs down 10%.",
+  "\"Wait!\" he called - but she'd already left; the door slammed shut.",
+  "Options include: A) red, B) blue, or C) green - choose wisely!",
+  "Question: What's 2 + 2? Answer: 4! (That was easy.)",
+];
+
+// Sentences emphasizing specific punctuation marks
+export const SENTENCES_WITH_COLONS = [
+  "Here's what you need: patience, practice, and persistence.",
+  "The answer is clear: hard work pays off.",
+  "Note: all entries must be submitted by Friday.",
+  "Warning: contents may be hot; handle with care.",
+  "The time has come: we must make a decision.",
+  "Remember: success requires dedication.",
+  "The forecast shows: sunny skies ahead.",
+  "The verdict: guilty on all counts.",
+];
+
+export const SENTENCES_WITH_SEMICOLONS = [
+  "The sun was setting; the sky turned orange and pink.",
+  "She studied hard; consequently, she passed the exam.",
+  "He arrived early; she came late; they met in the middle.",
+  "The road was long; however, they kept going.",
+  "Practice is important; without it, you won't improve.",
+  "The storm passed; calm returned to the village.",
+  "Life is short; make every moment count.",
+  "Some prefer tea; others prefer coffee.",
+];
+
+export const SENTENCES_WITH_DASHES = [
+  "The solution - if you can call it that - was temporary.",
+  "Her idea - brilliant as it was - faced opposition.",
+  "The old building - once a school - now stands empty.",
+  "This opportunity - rare and precious - won't come again.",
+  "The secret - known only to a few - was finally revealed.",
+  "His plan - daring but risky - actually worked.",
+  "The answer - surprisingly simple - was right in front of us.",
+  "Their journey - long and difficult - finally ended.",
+];
+
+export const SENTENCES_WITH_QUOTES = [
+  "\"I'll be back,\" he promised as he walked out the door.",
+  "She said \"yes\" without any hesitation whatsoever.",
+  "\"Why?\" he asked. \"Why did you do it?\"",
+  "The sign read \"No Entry\" in bold red letters.",
+  "\"Perfect,\" she whispered. \"Absolutely perfect.\"",
+  "He always said \"never give up\" no matter what.",
+  "\"Help!\" she called out. \"Is anyone there?\"",
+  "The word \"impossible\" doesn't exist in her vocabulary.",
+];
+
+export const SENTENCES_WITH_PARENTHESES = [
+  "The book (first edition) is worth a fortune today.",
+  "Their house (built in 1920) needs major repairs.",
+  "The answer (as I explained earlier) is quite simple.",
+  "My brother (the younger one) lives in Boston.",
+  "The meeting (see attached agenda) starts at nine.",
+  "This recipe (my grandmother's) never fails.",
+  "The test (multiple choice) took two hours.",
+  "Her car (a blue sedan) was parked outside.",
+];
+
+// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 
@@ -328,8 +555,18 @@ export function getAllSentences(): string[] {
     ...PANGRAM_SENTENCES,
     ...PUNCTUATION_SENTENCES,
     ...PROVERBS,
-    ...getAllNumberSentences(),
-    ...getAllPunctuationSentences(),
+    ...SENTENCES_WITH_DATES,
+    ...SENTENCES_WITH_TIMES,
+    ...SENTENCES_WITH_PRICES,
+    ...SENTENCES_WITH_QUANTITIES,
+    ...SENTENCES_WITH_STATISTICS,
+    ...SENTENCES_WITH_MEASUREMENTS,
+    ...RICH_PUNCTUATION_SENTENCES,
+    ...SENTENCES_WITH_COLONS,
+    ...SENTENCES_WITH_SEMICOLONS,
+    ...SENTENCES_WITH_DASHES,
+    ...SENTENCES_WITH_QUOTES,
+    ...SENTENCES_WITH_PARENTHESES,
     ...getAllExpandedSentences(),
   ];
 }
