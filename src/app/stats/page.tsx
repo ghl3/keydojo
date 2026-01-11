@@ -324,6 +324,7 @@ export default function StatsPage() {
       {selectedSession && (
         <SessionSummary
           result={selectedSession}
+          userStats={userStats}
           onClose={() => setSelectedSession(null)}
           onDismiss={() => setSelectedSession(null)}
         />

@@ -357,13 +357,8 @@ export function useTypingStateMachine({
     if (state.status === "complete" && onComplete && state.completedAt) {
       const duration = activeTypingTimeRef.current;
 
-      // Count mistakes (corrected characters)
-      let totalMistakes = 0;
-      for (const char of state.characters) {
-        if (char.state === "corrected") {
-          totalMistakes += 1;
-        }
-      }
+      // Count mistakes (using recordedMistakePositions for consistency with mistakesByKey)
+      const totalMistakes = recordedMistakePositions.current.size;
 
       const categoryBreakdown = calculateCategoryBreakdown(
         state.text,

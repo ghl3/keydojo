@@ -175,7 +175,7 @@ export default function Home() {
 
       {/* Session Summary Modal */}
       {showSummary && lastResult && (
-        <SessionSummary result={lastResult} onClose={handleNewSession} onDismiss={handleDismissSummary} />
+        <SessionSummary result={lastResult} userStats={userStats} onClose={handleNewSession} onDismiss={handleDismissSummary} />
       )}
     </main>
   );
