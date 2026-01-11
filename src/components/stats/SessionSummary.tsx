@@ -113,57 +113,50 @@ export function SessionSummary({ result, onClose, onDismiss }: SessionSummaryPro
         </h2>
 
         {/* Main stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-4 gap-3 mb-6">
           <div className="text-center">
-            <div className={`text-4xl font-bold ${getWpmColor(result.grossWPM)}`}>
+            <div className={`text-3xl font-bold ${getWpmColor(result.grossWPM)}`}>
               {result.grossWPM}
             </div>
             <div className="text-sm text-gray-500">WPM</div>
           </div>
           <div className="text-center">
-            <div className={`text-4xl font-bold ${getAccuracyColor(result.accuracy)}`}>
+            <div className={`text-3xl font-bold ${getAccuracyColor(result.accuracy)}`}>
               {result.accuracy}%
             </div>
             <div className="text-sm text-gray-500">Accuracy</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-gray-600">
+            <div className="text-3xl font-bold text-gray-600">
               {formatDuration(result.duration)}
             </div>
             <div className="text-sm text-gray-500">Time</div>
           </div>
+          <div className="text-center">
+            <div className={`text-3xl font-bold ${result.totalMistakes === 0 ? "text-green-600" : "text-red-500"}`}>
+              {result.totalMistakes}
+            </div>
+            <div className="text-sm text-gray-500">Errors</div>
+          </div>
         </div>
 
-        {/* Content-level stats */}
-        <div className="mb-6 p-3 bg-cream-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Content Stats</h3>
-          <div className="grid grid-cols-3 gap-2 text-center text-sm">
-            <div>
-              <div className="font-medium">{result.wordsTyped}</div>
-              <div className="text-gray-500">Words</div>
-              <div className="text-xs text-gray-400">
-                {result.errorsPerWord.toFixed(2)} errors/word
-              </div>
-            </div>
-            {result.sentencesTyped !== undefined && (
-              <div>
-                <div className="font-medium">{result.sentencesTyped}</div>
-                <div className="text-gray-500">Sentences</div>
-                <div className="text-xs text-gray-400">
-                  {(result.errorsPerSentence ?? 0).toFixed(2)} errors/sentence
-                </div>
-              </div>
-            )}
-            {result.paragraphsTyped !== undefined && result.paragraphsTyped > 1 && (
-              <div>
-                <div className="font-medium">{result.paragraphsTyped}</div>
-                <div className="text-gray-500">Paragraphs</div>
-                <div className="text-xs text-gray-400">
-                  {(result.errorsPerParagraph ?? 0).toFixed(2)} errors/paragraph
-                </div>
-              </div>
-            )}
-          </div>
+        {/* Content summary */}
+        <div className="mb-6 p-3 bg-cream-50 rounded-lg text-center text-sm text-gray-600">
+          <span className="font-medium">{result.totalCharacters}</span> {result.totalCharacters === 1 ? "character" : "characters"}
+          {" · "}
+          <span className="font-medium">{result.wordsTyped}</span> {result.wordsTyped === 1 ? "word" : "words"}
+          {result.sentencesTyped !== undefined && result.sentencesTyped > 0 && (
+            <>
+              {" · "}
+              <span className="font-medium">{result.sentencesTyped}</span> {result.sentencesTyped === 1 ? "sentence" : "sentences"}
+            </>
+          )}
+          {result.paragraphsTyped !== undefined && result.paragraphsTyped > 1 && (
+            <>
+              {" · "}
+              <span className="font-medium">{result.paragraphsTyped}</span> paragraphs
+            </>
+          )}
         </div>
 
         {/* Category breakdown */}

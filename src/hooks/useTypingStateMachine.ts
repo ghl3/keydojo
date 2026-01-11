@@ -68,6 +68,8 @@ export function useTypingStateMachine({
   // Mistake tracking refs
   const mistakesByKey = useRef<Record<string, number>>({});
   const mistakesByPair = useRef<Record<string, number>>({});
+  // Track positions where we've already recorded a mistake (to avoid over-counting)
+  const recordedMistakePositions = useRef<Set<number>>(new Set());
 
   // Boundary tracking
   const wordBoundaries = useMemo(() => findWordBoundaries(text), [text]);
@@ -157,6 +159,7 @@ export function useTypingStateMachine({
     dispatch({ type: "RESET", text, errorMode });
     mistakesByKey.current = {};
     mistakesByPair.current = {};
+    recordedMistakePositions.current = new Set();
     activeTypingTimeRef.current = 0;
     lastKeystrokeTimeRef.current = 0;
     boundaryErrorState.current = {
@@ -243,6 +246,7 @@ export function useTypingStateMachine({
         dispatch({ type: "RESET", errorMode });
         mistakesByKey.current = {};
         mistakesByPair.current = {};
+        recordedMistakePositions.current = new Set();
         activeTypingTimeRef.current = 0;
         lastKeystrokeTimeRef.current = 0;
         boundaryErrorState.current = {
@@ -307,14 +311,17 @@ export function useTypingStateMachine({
       } else {
         setErrorKeyWithTimeout(e.key);
 
-        // Track mistake for expected character
-        mistakesByKey.current[expectedChar] = (mistakesByKey.current[expectedChar] || 0) + 1;
+        // Track mistake for expected character (only once per position)
+        if (!recordedMistakePositions.current.has(cursorPosition)) {
+          recordedMistakePositions.current.add(cursorPosition);
+          mistakesByKey.current[expectedChar] = (mistakesByKey.current[expectedChar] || 0) + 1;
 
-        // Track mistake for letter pair
-        if (cursorPosition > 0) {
-          const prevChar = state.text[cursorPosition - 1];
-          const pair = prevChar + expectedChar;
-          mistakesByPair.current[pair] = (mistakesByPair.current[pair] || 0) + 1;
+          // Track mistake for letter pair
+          if (cursorPosition > 0) {
+            const prevChar = state.text[cursorPosition - 1];
+            const pair = prevChar + expectedChar;
+            mistakesByPair.current[pair] = (mistakesByPair.current[pair] || 0) + 1;
+          }
         }
       }
 
@@ -426,6 +433,7 @@ export function useTypingStateMachine({
     dispatch({ type: "RESET", errorMode });
     mistakesByKey.current = {};
     mistakesByPair.current = {};
+    recordedMistakePositions.current = new Set();
     activeTypingTimeRef.current = 0;
     lastKeystrokeTimeRef.current = 0;
     boundaryErrorState.current = {
