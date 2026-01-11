@@ -16,6 +16,7 @@ import { getUserSettings, updateUserSettings } from "@/lib/storage/localStorage"
 import { getDefaultSettings, FONT_SIZE_VALUES, TEXT_LENGTH_CHARS } from "@/types/settings";
 import type { UserSettings } from "@/types/settings";
 import type { SessionMode, SessionResult } from "@/types";
+import { getWeakestKeys } from "@/lib/stats/selectors";
 
 export default function Home() {
   // Initialize settings from localStorage (with SSR-safe default)
@@ -48,6 +49,12 @@ export default function Home() {
   const [textKey, setTextKey] = useState(0); // Used to trigger new text generation
   const { userStats, updateStats } = useLocalStorage();
 
+  // Compute weak keys from stats (for adaptive difficulty and keyboard display)
+  const weakKeys = useMemo(
+    () => getWeakestKeys(userStats.keyStats),
+    [userStats.keyStats]
+  );
+
   // Extract mode from settings for convenience
   const mode = settings.defaultMode;
 
@@ -56,7 +63,7 @@ export default function Home() {
   const text = useMemo(() => {
     const generatorInput = toGeneratorOptions(mode.content, {
       targetLength: TEXT_LENGTH_CHARS[settings.textLength],
-      weakKeys: settings.adaptiveDifficulty ? userStats.weakestKeys : [],
+      weakKeys: settings.adaptiveDifficulty ? weakKeys : [],
       adaptiveIntensity: settings.adaptiveDifficulty ? settings.adaptiveIntensity : 0,
     });
     return generateContent(generatorInput).text;
@@ -158,7 +165,7 @@ export default function Home() {
             activeKey={activeKey}
             nextKey={settings.highlightNextKey ? nextKey : null}
             errorKey={errorKey}
-            weakKeys={userStats.weakestKeys.slice(0, 5)}
+            weakKeys={weakKeys.slice(0, 5)}
           />
         )}
 

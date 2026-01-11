@@ -1,17 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Card } from "@/components/ui/Card";
 import { Header } from "@/components/layout/Header";
 import { SessionSummary } from "@/components/stats/SessionSummary";
+import { KeyboardHeatmap } from "@/components/stats/KeyboardHeatmap";
 import type { CharCategory, ContentType, SessionResult } from "@/types";
 import { getContentType } from "@/types";
+import { getWeakestKeys } from "@/lib/stats/selectors";
 
 export default function StatsPage() {
   const { userStats, isLoaded, resetStats } = useLocalStorage();
   const [selectedSession, setSelectedSession] = useState<SessionResult | null>(null);
+
+  const weakestKeys = useMemo(
+    () => getWeakestKeys(userStats.keyStats),
+    [userStats.keyStats]
+  );
 
   if (!isLoaded) {
     return (
@@ -188,14 +195,19 @@ export default function StatsPage() {
               </div>
             </Card>
 
+            {/* Keyboard Heatmap */}
+            {Object.keys(userStats.keyStats).length > 0 && (
+              <KeyboardHeatmap keyStats={userStats.keyStats} />
+            )}
+
             {/* Weakest keys */}
-            {userStats.weakestKeys.length > 0 && (
+            {weakestKeys.length > 0 && (
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Keys to Practice
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {userStats.weakestKeys.slice(0, 10).map((key) => {
+                  {weakestKeys.map((key) => {
                     const keyData = userStats.keyStats[key];
                     return (
                       <div

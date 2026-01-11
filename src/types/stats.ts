@@ -109,11 +109,6 @@ export interface UserStats {
   // Letter pair (bigram) stats for transition tracking
   pairStats: Record<string, PairStats>;
 
-  // Computed weak areas (for adaptive learning)
-  weakestKeys: string[]; // sorted by mistakeRate desc
-  weakestPairs: string[]; // sorted by mistakeRate desc
-  weakestCategories: CharCategory[]; // sorted by mistakeRate desc
-
   // Recent sessions for history view
   recentSessions: SessionResult[]; // last 100
 }
@@ -146,9 +141,6 @@ export function getDefaultUserStats(): UserStats {
     },
     wordStats: {},
     pairStats: {},
-    weakestKeys: [],
-    weakestPairs: [],
-    weakestCategories: [],
     recentSessions: [],
   };
 }

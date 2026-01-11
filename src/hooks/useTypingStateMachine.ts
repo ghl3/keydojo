@@ -366,6 +366,12 @@ export function useTypingStateMachine({
         duration
       );
 
+      // Count attempts per key from the text
+      const attemptsByKey: Record<string, number> = {};
+      for (const char of state.text) {
+        attemptsByKey[char] = (attemptsByKey[char] || 0) + 1;
+      }
+
       const wordsTyped = wordBoundaries.length;
       const sentencesTyped = sentenceBoundaries.length;
       const paragraphsTyped = paragraphBoundaries.length;
@@ -387,6 +393,7 @@ export function useTypingStateMachine({
         totalCharacters: state.text.length,
         totalMistakes,
         categoryBreakdown,
+        attemptsByKey,
         mistakesByKey: { ...mistakesByKey.current },
         mistakesByPair: { ...mistakesByPair.current },
         wordsTyped,

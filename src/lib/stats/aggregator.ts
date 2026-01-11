@@ -42,19 +42,20 @@ export function aggregateSessionIntoStats(
     },
   ].slice(-200); // Keep last 200 data points
 
-  // Update per-key stats
+  // Update per-key stats using attemptsByKey for all keys typed
   const keyStats = { ...currentStats.keyStats };
-  for (const [key, mistakes] of Object.entries(session.mistakesByKey)) {
+  for (const [key, attempts] of Object.entries(session.attemptsByKey)) {
     const category = classifyChar(key);
     if (!keyStats[key]) {
       keyStats[key] = createDefaultKeyStats(key, category);
     }
 
     const keyData = keyStats[key];
+    const mistakes = session.mistakesByKey[key] || 0;
     const wasCorrect = mistakes === 0;
 
     // Update attempt counts
-    keyData.totalAttempts += 1;
+    keyData.totalAttempts += attempts;
     keyData.mistakes += mistakes;
     keyData.mistakeRate =
       keyData.totalAttempts > 0
@@ -130,27 +131,6 @@ export function aggregateSessionIntoStats(
         : 0;
   }
 
-  // Calculate weakest keys (sorted by mistake rate, at least 5 attempts)
-  const weakestKeys = Object.values(keyStats)
-    .filter((k) => k.totalAttempts >= 5)
-    .sort((a, b) => b.mistakeRate - a.mistakeRate)
-    .slice(0, 10)
-    .map((k) => k.key);
-
-  // Calculate weakest pairs (sorted by mistake rate, at least 3 attempts)
-  const weakestPairs = Object.values(pairStats)
-    .filter((p) => p.totalAttempts >= 3)
-    .sort((a, b) => b.mistakeRate - a.mistakeRate)
-    .slice(0, 10)
-    .map((p) => p.pair);
-
-  // Calculate weakest categories
-  const weakestCategories = (
-    Object.values(categoryStats) as { category: CharCategory; mistakeRate: number; totalAttempts: number }[]
-  )
-    .filter((c) => c.totalAttempts >= 10)
-    .sort((a, b) => b.mistakeRate - a.mistakeRate)
-    .map((c) => c.category);
 
   // Add to recent sessions
   const recentSessions = [session, ...currentStats.recentSessions].slice(
@@ -173,9 +153,6 @@ export function aggregateSessionIntoStats(
     contentTypeStats,
     wordStats: currentStats.wordStats, // TODO: implement word-level tracking
     pairStats,
-    weakestKeys,
-    weakestPairs,
-    weakestCategories,
     recentSessions,
   };
 }

@@ -252,6 +252,9 @@ export interface SessionResult {
     }
   >;
 
+  // Per-key attempts in this session (how many times each key was typed)
+  attemptsByKey: Record<string, number>;
+
   // Per-key mistakes in this session
   mistakesByKey: Record<string, number>;
 

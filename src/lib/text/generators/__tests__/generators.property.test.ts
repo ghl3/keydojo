@@ -9,7 +9,7 @@ import { SentencesGenerator } from "../SentencesGenerator";
 import { ParagraphsGenerator } from "../ParagraphsGenerator";
 import { CodeGenerator } from "../CodeGenerator";
 import { generateContent } from "../generateContent";
-import type { CodeLanguage } from "@/types/generators";
+import type { CodeLanguage, ContentGeneratorInput } from "@/types/generators";
 
 // ============= WORDS GENERATOR =============
 
@@ -350,7 +350,7 @@ describe("Cross-generator invariants", () => {
       fc.property(
         fc.constantFrom("words", "sentences", "paragraphs", "code"),
         (type) => {
-          let input;
+          let input: ContentGeneratorInput;
           switch (type) {
             case "words":
               input = {
