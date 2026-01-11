@@ -6,6 +6,8 @@
  * Each snippet uses template strings to preserve formatting and indentation.
  */
 
+import { getAllExpandedCodeSnippets } from "./content/expandedCode";
+
 // =============================================================================
 // JAVASCRIPT / TYPESCRIPT SNIPPETS
 // Common patterns for web development
@@ -628,6 +630,7 @@ export function getAllCodeSnippets(): string[] {
     ...JSON_SNIPPETS,
     ...SQL_SNIPPETS,
     ...REACT_SNIPPETS,
+    ...getAllExpandedCodeSnippets(),
   ];
 }
 

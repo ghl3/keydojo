@@ -7,23 +7,39 @@
  * - Mixed mode for variety
  */
 
-import type { CodeGeneratorOptions, GeneratedContent } from "@/types/generators";
-import { getAllCodeSnippets, getSnippetsByLanguage } from "../codeSnippets";
+import type { CodeGeneratorOptions, GeneratedContent, CodeLanguage } from "@/types/generators";
+import { queryCode } from "../contentQuery";
+import type { CodeLanguageTag } from "@/types/tags";
 import { shuffle } from "./utils";
+
+// Map generator language options to tag language tags
+const LANGUAGE_TO_TAG: Record<CodeLanguage, CodeLanguageTag> = {
+  javascript: "lang:javascript",
+  typescript: "lang:typescript",
+  python: "lang:python",
+  html: "lang:html",
+  css: "lang:css",
+  sql: "lang:sql",
+  json: "lang:json",
+  react: "lang:react",
+  mixed: "lang:mixed",
+};
 
 export class CodeGenerator {
   generate(options: CodeGeneratorOptions): GeneratedContent {
     const { targetLength, language } = options;
 
     // Get snippets based on language selection
-    const snippets =
-      language === "mixed"
-        ? getAllCodeSnippets()
-        : getSnippetsByLanguage(language);
-
-    if (snippets.length === 0) {
-      // Fallback to all snippets if no matches
-      return this.generateFromSnippets(getAllCodeSnippets(), targetLength, language);
+    let snippets: string[];
+    if (language === "mixed") {
+      snippets = queryCode({});
+    } else {
+      const langTag = LANGUAGE_TO_TAG[language];
+      snippets = queryCode({ requireTags: [langTag] });
+      // Fallback to all snippets if no matches for this language
+      if (snippets.length === 0) {
+        snippets = queryCode({});
+      }
     }
 
     return this.generateFromSnippets(snippets, targetLength, language);

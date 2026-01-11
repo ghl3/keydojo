@@ -5,6 +5,8 @@
  * Organized by frequency and difficulty for adaptive practice.
  */
 
+import { getAllExpandedWords } from "./content/expandedWords";
+
 // =============================================================================
 // FREQUENCY-BASED WORD LISTS
 // Most common English words, organized by frequency bands
@@ -2338,7 +2340,7 @@ export function getBasicWords(): string[] {
   return [...SHORT_WORDS, ...MEDIUM_WORDS];
 }
 
-// Get all words (short + medium + long)
+// Get all words (short + medium + long + expanded)
 export function getAllWords(): string[] {
   return [
     ...TOP_50_WORDS,
@@ -2347,6 +2349,7 @@ export function getAllWords(): string[] {
     ...SHORT_WORDS,
     ...MEDIUM_WORDS,
     ...LONG_WORDS,
+    ...getAllExpandedWords(),
   ];
 }
 

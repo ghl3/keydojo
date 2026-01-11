@@ -11,23 +11,38 @@ import type {
   ParagraphsGeneratorOptions,
   GeneratedContent,
 } from "@/types/generators";
-import {
-  getTaggedParagraphs,
-  getParagraphsWithNumbers,
-  getParagraphsWithoutNumbers,
-  type TaggedParagraph,
-} from "../taggedContent";
-import { selectWeightedItem, stripNumbers, stripPunctuation } from "./utils";
+import { queryTaggedParagraphs } from "../contentQuery";
+import type { TaggedParagraph } from "@/types/tags";
+import { selectWeightedItemFromTagged, stripNumbers, stripPunctuation } from "./utils";
 
 export class ParagraphsGenerator {
-  private allParagraphs: TaggedParagraph[];
-  private paragraphsWithNumbers: TaggedParagraph[];
-  private paragraphsWithoutNumbers: TaggedParagraph[];
+  private allParagraphs: TaggedParagraph[] | null = null;
+  private paragraphsWithNumbers: TaggedParagraph[] | null = null;
+  private paragraphsWithoutNumbers: TaggedParagraph[] | null = null;
 
-  constructor() {
-    this.allParagraphs = getTaggedParagraphs();
-    this.paragraphsWithNumbers = getParagraphsWithNumbers();
-    this.paragraphsWithoutNumbers = getParagraphsWithoutNumbers();
+  private getAllParagraphs(): TaggedParagraph[] {
+    if (this.allParagraphs === null) {
+      this.allParagraphs = queryTaggedParagraphs({});
+    }
+    return this.allParagraphs;
+  }
+
+  private getParagraphsWithNumbers(): TaggedParagraph[] {
+    if (this.paragraphsWithNumbers === null) {
+      this.paragraphsWithNumbers = queryTaggedParagraphs({
+        requireTags: ["has:numbers"],
+      });
+    }
+    return this.paragraphsWithNumbers;
+  }
+
+  private getParagraphsWithoutNumbers(): TaggedParagraph[] {
+    if (this.paragraphsWithoutNumbers === null) {
+      this.paragraphsWithoutNumbers = queryTaggedParagraphs({
+        excludeTags: ["has:numbers"],
+      });
+    }
+    return this.paragraphsWithoutNumbers;
   }
 
   generate(options: ParagraphsGeneratorOptions): GeneratedContent {
@@ -41,28 +56,32 @@ export class ParagraphsGenerator {
 
     // Select appropriate pool based on number preference
     const preferredPool = includeNumbers
-      ? this.paragraphsWithNumbers
-      : this.paragraphsWithoutNumbers;
+      ? this.getParagraphsWithNumbers()
+      : this.getParagraphsWithoutNumbers();
 
     const paragraphs: string[] = [];
     let currentLength = 0;
 
     while (currentLength < targetLength) {
       // Try to get from preferred pool first (80% of the time)
-      let paragraph: TaggedParagraph;
+      let taggedParagraph: TaggedParagraph;
+      let hasNumbers: boolean;
 
       if (preferredPool.length > 0 && Math.random() < 0.8) {
-        paragraph = selectWeightedItem(preferredPool, weakKeys, adaptiveIntensity);
+        taggedParagraph = selectWeightedItemFromTagged(preferredPool, weakKeys, adaptiveIntensity);
+        hasNumbers = taggedParagraph.tags.includes("has:numbers");
       } else {
         // Fallback to all paragraphs
-        paragraph = selectWeightedItem(this.allParagraphs, weakKeys, adaptiveIntensity);
+        taggedParagraph = selectWeightedItemFromTagged(this.getAllParagraphs(), weakKeys, adaptiveIntensity);
+        hasNumbers = taggedParagraph.tags.includes("has:numbers");
       }
 
       // Join sentences within paragraph with spaces
-      let text = paragraph.sentences.map((s) => s.text).join(" ");
+      // content is string[] (array of sentences)
+      let text = taggedParagraph.content.join(" ");
 
       // Apply filtering if content doesn't match preference
-      if (!includeNumbers && paragraph.hasNumbers) {
+      if (!includeNumbers && hasNumbers) {
         text = stripNumbers(text);
       }
       if (!includePunctuation) {

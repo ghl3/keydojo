@@ -95,3 +95,43 @@ export function stripPunctuation(text: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/**
+ * Weighted selection for tagged items (items with content property).
+ * Items containing more weak keys are more likely to be selected.
+ */
+export function selectWeightedItemFromTagged<T extends { content: string | string[] }>(
+  items: T[],
+  weakKeys: string[],
+  intensity: number
+): T {
+  if (items.length === 0) {
+    throw new Error("Cannot select from empty array");
+  }
+
+  if (weakKeys.length === 0 || intensity === 0) {
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  // Calculate weights for each item
+  const weights = items.map((item) => {
+    const text = typeof item.content === "string"
+      ? item.content
+      : item.content.join(" ");
+    const weakKeyCount = countWeakKeysInText(text, weakKeys);
+    return 1 + weakKeyCount * intensity * 2;
+  });
+
+  // Weighted random selection
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+  let random = Math.random() * totalWeight;
+
+  for (let i = 0; i < items.length; i++) {
+    random -= weights[i];
+    if (random <= 0) {
+      return items[i];
+    }
+  }
+
+  return items[items.length - 1];
+}

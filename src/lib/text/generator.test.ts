@@ -648,9 +648,10 @@ describe("content quality", () => {
   describe("natural numbers in sentences", () => {
     it("sentences content includes naturally-occurring numbers", () => {
       // Generate multiple times to increase chance of getting number sentences
+      // Use more iterations since content pool is large
       let foundNumberSentence = false;
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 30; i++) {
         const text = generateBaseText({
           contentType: "sentences",
           length: "medium",

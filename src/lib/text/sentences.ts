@@ -7,6 +7,7 @@
 
 import { getAllNumberSentences } from "./numbersContent";
 import { getAllPunctuationSentences } from "./punctuationContent";
+import { getAllExpandedSentences } from "./content/expandedSentences";
 
 // =============================================================================
 // SIMPLE SENTENCES
@@ -329,6 +330,7 @@ export function getAllSentences(): string[] {
     ...PROVERBS,
     ...getAllNumberSentences(),
     ...getAllPunctuationSentences(),
+    ...getAllExpandedSentences(),
   ];
 }
 

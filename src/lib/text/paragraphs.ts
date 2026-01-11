@@ -5,6 +5,8 @@
  * All content is original and free to use.
  */
 
+import { getAllExpandedParagraphs } from "./content/expandedParagraphs";
+
 // =============================================================================
 // DAILY LIFE PARAGRAPHS
 // Paragraphs about everyday activities and routines
@@ -572,6 +574,7 @@ export function getAllParagraphs(): string[][] {
     ...TRAVEL_PARAGRAPHS,
     ...STATISTICS_PARAGRAPHS,
     ...EVENTS_PARAGRAPHS,
+    ...getAllExpandedParagraphs(),
   ];
 }
 

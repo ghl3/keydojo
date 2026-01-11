@@ -11,23 +11,38 @@ import type {
   SentencesGeneratorOptions,
   GeneratedContent,
 } from "@/types/generators";
-import {
-  getTaggedSentences,
-  getSentencesWithNumbers,
-  getSentencesWithoutNumbers,
-  type TaggedSentence,
-} from "../taggedContent";
-import { selectWeightedItem, stripNumbers, stripPunctuation } from "./utils";
+import { querySentences, queryTaggedSentences } from "../contentQuery";
+import type { TaggedSentence } from "@/types/tags";
+import { selectWeightedItemFromTagged, stripNumbers, stripPunctuation } from "./utils";
 
 export class SentencesGenerator {
-  private allSentences: TaggedSentence[];
-  private sentencesWithNumbers: TaggedSentence[];
-  private sentencesWithoutNumbers: TaggedSentence[];
+  private allSentences: TaggedSentence[] | null = null;
+  private sentencesWithNumbers: TaggedSentence[] | null = null;
+  private sentencesWithoutNumbers: TaggedSentence[] | null = null;
 
-  constructor() {
-    this.allSentences = getTaggedSentences();
-    this.sentencesWithNumbers = getSentencesWithNumbers();
-    this.sentencesWithoutNumbers = getSentencesWithoutNumbers();
+  private getAllSentences(): TaggedSentence[] {
+    if (this.allSentences === null) {
+      this.allSentences = queryTaggedSentences({});
+    }
+    return this.allSentences;
+  }
+
+  private getSentencesWithNumbers(): TaggedSentence[] {
+    if (this.sentencesWithNumbers === null) {
+      this.sentencesWithNumbers = queryTaggedSentences({
+        requireTags: ["has:numbers"],
+      });
+    }
+    return this.sentencesWithNumbers;
+  }
+
+  private getSentencesWithoutNumbers(): TaggedSentence[] {
+    if (this.sentencesWithoutNumbers === null) {
+      this.sentencesWithoutNumbers = queryTaggedSentences({
+        excludeTags: ["has:numbers"],
+      });
+    }
+    return this.sentencesWithoutNumbers;
   }
 
   generate(options: SentencesGeneratorOptions): GeneratedContent {
@@ -41,27 +56,30 @@ export class SentencesGenerator {
 
     // Select appropriate pool based on number preference
     const preferredPool = includeNumbers
-      ? this.sentencesWithNumbers
-      : this.sentencesWithoutNumbers;
+      ? this.getSentencesWithNumbers()
+      : this.getSentencesWithoutNumbers();
 
     const sentences: string[] = [];
     let currentLength = 0;
 
     while (currentLength < targetLength) {
       // Try to get from preferred pool first (80% of the time)
-      let sentence: TaggedSentence;
+      let taggedSentence: TaggedSentence;
+      let hasNumbers: boolean;
 
       if (preferredPool.length > 0 && Math.random() < 0.8) {
-        sentence = selectWeightedItem(preferredPool, weakKeys, adaptiveIntensity);
+        taggedSentence = selectWeightedItemFromTagged(preferredPool, weakKeys, adaptiveIntensity);
+        hasNumbers = taggedSentence.tags.includes("has:numbers");
       } else {
         // Fallback to all sentences
-        sentence = selectWeightedItem(this.allSentences, weakKeys, adaptiveIntensity);
+        taggedSentence = selectWeightedItemFromTagged(this.getAllSentences(), weakKeys, adaptiveIntensity);
+        hasNumbers = taggedSentence.tags.includes("has:numbers");
       }
 
-      let text = sentence.text;
+      let text = taggedSentence.content;
 
       // Apply filtering if content doesn't match preference
-      if (!includeNumbers && sentence.hasNumbers) {
+      if (!includeNumbers && hasNumbers) {
         text = stripNumbers(text);
       }
       if (!includePunctuation) {
