@@ -114,6 +114,26 @@ export function Keyboard({
           </div>
         ))}
       </div>
+
+      {/* Legend */}
+      <div className="flex justify-center gap-4 mt-3 text-xs text-gray-600">
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded key-next" />
+          <span>Next</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded key-active" />
+          <span>Pressed</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded key-error" />
+          <span>Error</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded key-weak" />
+          <span>Weak</span>
+        </div>
+      </div>
     </Card>
   );
 }
