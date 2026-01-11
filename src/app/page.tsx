@@ -8,7 +8,7 @@ import { StatsDisplay } from "@/components/stats/StatsDisplay";
 import { SessionSummary } from "@/components/stats/SessionSummary";
 import { Header } from "@/components/layout/Header";
 import { SettingsPanel } from "@/components/ui/SettingsPanel";
-import { useTypingSession } from "@/hooks/useTypingSession";
+import { useTypingStateMachine } from "@/hooks/useTypingStateMachine";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { generateBaseText, transformText } from "@/lib/text/generator";
 import { getUserSettings, updateUserSettings } from "@/lib/storage/localStorage";
@@ -80,6 +80,7 @@ export default function Home() {
 
   const {
     session,
+    visualState,
     liveStats,
     activeKey,
     nextKey,
@@ -87,7 +88,7 @@ export default function Home() {
     handleKeyDown,
     handleKeyUp,
     reset,
-  } = useTypingSession({
+  } = useTypingStateMachine({
     text,
     mode,
     onComplete: handleComplete,
@@ -150,6 +151,7 @@ export default function Home() {
         <TypingArea
           text={text}
           session={session}
+          visualState={visualState}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           showSpaceMarkers={settings.showSpaceMarkers}

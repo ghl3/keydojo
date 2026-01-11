@@ -11,20 +11,25 @@
 @layer components {
   /* Character states in typing area */
   .char-pending {
-    @apply text-gray-400;
+    color: #9ca3af; /* gray-400 */
   }
   .char-correct {
-    @apply text-gray-900;
+    color: #111827; /* gray-900 */
   }
   .char-incorrect {
-    @apply text-red-600 bg-red-100;
+    color: #dc2626; /* red-600 */
+    background-color: #fee2e2; /* red-100 */
   }
   .char-corrected {
-    @apply text-gray-900 underline decoration-red-400 decoration-2;
+    color: #111827; /* gray-900 */
+    text-decoration: underline;
+    text-decoration-color: #f87171; /* red-400 */
+    text-decoration-thickness: 2px;
   }
   /* Characters typed after an uncorrected error (in correction-required mode) */
   .char-error-zone {
-    @apply text-red-600;
+    color: #ef4444; /* red-500 */
+    background-color: #fef2f2; /* red-50 */
   }
 
   /* Keyboard key states */

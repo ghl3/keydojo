@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useEffect, useMemo } from "react";
-import type { TypingSession, ErrorMode } from "@/types";
+import type { TypingSession, ErrorMode, VisualSessionState } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { visualStateToCssClass } from "@/lib/typing/typingSelectors";
 
 interface TypingAreaProps {
   text: string;
@@ -13,6 +14,7 @@ interface TypingAreaProps {
   showSpaceMarkers?: boolean;
   fontSize?: string;
   errorMode?: ErrorMode;
+  visualState?: VisualSessionState; // New: pre-computed visual state from hook
 }
 
 // Split text into words (preserving spaces and punctuation with words)
@@ -48,7 +50,7 @@ function splitIntoWords(text: string): { word: string; startIndex: number }[] {
   return words;
 }
 
-export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers = false, fontSize = "1.125rem", errorMode = "stop-on-error" }: TypingAreaProps) {
+export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers = false, fontSize = "1.125rem", errorMode = "stop-on-error", visualState }: TypingAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const currentCharRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,53 +58,40 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
   // Split text into words for non-breaking display
   const words = useMemo(() => splitIntoWords(text), [text]);
 
-  // Find the first uncorrected error (for correction-required mode error zone)
-  const firstErrorIndex = useMemo(() => {
-    if (errorMode !== "correction-required") return -1;
-    return session.typedCharacters.findIndex(char => char.state === "incorrect");
-  }, [session.typedCharacters, errorMode]);
-
-  // Helper to determine character class based on state and error zone
-  const getCharClassName = (charIndex: number) => {
-    const typedChar = session.typedCharacters[charIndex];
-
-    // Characters at or after cursor should never be in error zone
-    // This is a safety check in case state wasn't properly reset
-    if (charIndex >= session.currentIndex) {
-      // Not yet reached by cursor - should be pending or show actual state
-      if (!typedChar || typedChar.state === "pending") return "char-pending";
-      // If somehow still has old state but cursor passed, show as pending
-      if (typedChar.state === "correct") return "char-pending";
-      // Incorrect stays incorrect (user needs to fix it)
-      if (typedChar.state === "incorrect") return "char-incorrect";
-      if (typedChar.state === "corrected") return "char-corrected";
-      return "char-pending";
+  // Helper to get character class - uses visualState if provided (single source of truth)
+  const getCharClassName = (charIndex: number): string => {
+    // Use visualState if provided (preferred - from new state machine)
+    if (visualState && visualState.characters[charIndex]) {
+      return visualStateToCssClass(visualState.characters[charIndex].visualState);
     }
 
-    // Characters before cursor
+    // Fallback to old logic for backwards compatibility
+    // (This can be removed once all callers provide visualState)
+    const typedChar = session.typedCharacters[charIndex];
     if (!typedChar || typedChar.state === "pending") return "char-pending";
     if (typedChar.state === "corrected") return "char-corrected";
     if (typedChar.state === "incorrect") return "char-incorrect";
-
-    // Correct characters before cursor - check if in error zone
-    if (typedChar.state === "correct") {
-      if (
-        errorMode === "correction-required" &&
-        firstErrorIndex !== -1 &&
-        charIndex > firstErrorIndex
-      ) {
-        return "char-error-zone";
-      }
-      return "char-correct";
-    }
-
+    if (typedChar.state === "correct") return "char-correct";
     return "char-pending";
+  };
+
+  // Check if character is at cursor position
+  const isCursorAt = (charIndex: number): boolean => {
+    if (visualState) {
+      return visualState.characters[charIndex]?.isCursor ?? false;
+    }
+    return charIndex === session.currentIndex;
   };
 
   // Keep focus on the hidden input
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Get current cursor position for auto-scroll dependency
+  const cursorPosition = visualState
+    ? visualState.characters.findIndex(c => c.isCursor)
+    : session.currentIndex;
 
   // Auto-scroll to keep current character visible
   useEffect(() => {
@@ -137,13 +126,13 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
         });
       }
     }
-  }, [session.currentIndex]);
+  }, [cursorPosition]);
 
   const handleClick = () => {
     inputRef.current?.focus();
   };
 
-  const progress = text.length > 0 ? (session.currentIndex / text.length) * 100 : 0;
+  const progress = visualState ? visualState.progress : (text.length > 0 ? (session.currentIndex / text.length) * 100 : 0);
 
   return (
     <Card className="p-6">
@@ -164,7 +153,7 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
           // No visible indicator - just a line break with cursor at start of next line
           if (word === "\n") {
             const charIndex = startIndex;
-            const isCurrent = charIndex === session.currentIndex;
+            const isCurrent = isCursorAt(charIndex);
 
             return (
               <span key={`word-${wordIndex}`}>
@@ -185,9 +174,10 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
           // Handle spaces - render as regular inline element
           if (word === " ") {
             const charIndex = startIndex;
-            const typedChar = session.typedCharacters[charIndex];
-            const isCurrent = charIndex === session.currentIndex;
-            const isPending = !typedChar || typedChar.state === "pending";
+            const isCurrent = isCursorAt(charIndex);
+            const isPending = visualState
+              ? visualState.characters[charIndex]?.visualState === "pending"
+              : (!session.typedCharacters[charIndex] || session.typedCharacters[charIndex].state === "pending");
             const className = getCharClassName(charIndex);
 
             return (
@@ -222,7 +212,7 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
             >
               {word.split("").map((char, charOffset) => {
                 const charIndex = startIndex + charOffset;
-                const isCurrent = charIndex === session.currentIndex;
+                const isCurrent = isCursorAt(charIndex);
                 const className = getCharClassName(charIndex);
 
                 return (

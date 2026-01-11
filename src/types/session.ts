@@ -1,5 +1,26 @@
-// Character states during typing
+import type { ErrorMode } from "./settings";
+
+// Character states during typing (stored state)
 export type CharacterState = "pending" | "correct" | "incorrect" | "corrected";
+
+// Visual character state (derived for rendering, includes error-zone)
+export type VisualCharState = "pending" | "correct" | "incorrect" | "corrected" | "error-zone";
+
+// Visual character for rendering
+export interface VisualCharacter {
+  char: string;
+  visualState: VisualCharState;
+  isCursor: boolean;
+}
+
+// Derived visual state for the entire session
+export interface VisualSessionState {
+  characters: VisualCharacter[];
+  isComplete: boolean;
+  hasUnfixedErrors: boolean;
+  firstErrorIndex: number | null;
+  progress: number; // 0-100
+}
 
 // Single character in the typing text
 export interface TypedCharacter {
@@ -7,6 +28,32 @@ export interface TypedCharacter {
   state: CharacterState;
   typedAt?: number; // Timestamp when typed
   attempts: number; // Number of attempts (for corrections)
+}
+
+// ============= STATE MACHINE TYPES =============
+
+// Core typing state (minimal stored state for the reducer)
+export interface TypingState {
+  id: string;
+  text: string;
+  characters: TypedCharacter[];
+  cursorPosition: number;
+  errorMode: ErrorMode;
+  status: "idle" | "active" | "complete";
+  startedAt: number | null;
+  completedAt: number | null;
+}
+
+// Actions for the typing reducer
+export type TypingAction =
+  | { type: "TYPE_CHAR"; char: string; timestamp: number }
+  | { type: "BACKSPACE"; timestamp: number }
+  | { type: "RESET"; text?: string; errorMode?: ErrorMode };
+
+// Configuration for creating initial state
+export interface TypingConfig {
+  text: string;
+  errorMode: ErrorMode;
 }
 
 // Session mode configuration
