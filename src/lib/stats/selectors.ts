@@ -8,7 +8,7 @@ export function getWeakestKeys(
   keyStats: Record<string, KeyStats>,
   options: { minAttempts?: number; minErrorRate?: number; limit?: number } = {}
 ): string[] {
-  const { minAttempts = 5, minErrorRate = 0.01, limit = 10 } = options;
+  const { minAttempts = 1, minErrorRate = 0.01, limit = 10 } = options;
 
   return Object.values(keyStats)
     .filter((k) => k.totalAttempts >= minAttempts && k.mistakeRate > minErrorRate)
