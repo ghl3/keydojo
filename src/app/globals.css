@@ -9,29 +9,6 @@
 }
 
 @layer components {
-  /* Character states in typing area */
-  .char-pending {
-    color: #9ca3af; /* gray-400 */
-  }
-  .char-correct {
-    color: #111827; /* gray-900 */
-  }
-  .char-incorrect {
-    color: #dc2626; /* red-600 */
-    background-color: #fee2e2; /* red-100 */
-  }
-  .char-corrected {
-    color: #111827; /* gray-900 */
-    text-decoration: underline;
-    text-decoration-color: #f87171; /* red-400 */
-    text-decoration-thickness: 2px;
-  }
-  /* Characters typed after an uncorrected error (in correction-required mode) */
-  .char-error-zone {
-    color: #ef4444; /* red-500 */
-    background-color: #fef2f2; /* red-50 */
-  }
-
   /* Keyboard key states */
   .key-default {
     @apply bg-white border border-cream-300 shadow-key rounded-md transition-all duration-75;

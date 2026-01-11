@@ -3,7 +3,7 @@ import {
   computeVisualState,
   findFirstErrorIndex,
   deriveVisualState,
-  visualStateToCssClass,
+  visualStateToClassName,
   countMistakes,
   calculateAccuracy,
 } from "./typingSelectors";
@@ -278,13 +278,13 @@ describe("deriveVisualState", () => {
   });
 });
 
-describe("visualStateToCssClass", () => {
-  it("maps visual states to correct CSS classes", () => {
-    expect(visualStateToCssClass("pending")).toBe("char-pending");
-    expect(visualStateToCssClass("correct")).toBe("char-correct");
-    expect(visualStateToCssClass("incorrect")).toBe("char-incorrect");
-    expect(visualStateToCssClass("corrected")).toBe("char-corrected");
-    expect(visualStateToCssClass("error-zone")).toBe("char-error-zone");
+describe("visualStateToClassName", () => {
+  it("maps visual states to Tailwind utility classes", () => {
+    expect(visualStateToClassName("pending")).toBe("text-gray-400");
+    expect(visualStateToClassName("correct")).toBe("text-gray-900");
+    expect(visualStateToClassName("incorrect")).toBe("text-red-600 bg-red-100");
+    expect(visualStateToClassName("corrected")).toBe("text-gray-900 underline decoration-red-400 decoration-2");
+    expect(visualStateToClassName("error-zone")).toBe("text-red-500 bg-red-50");
   });
 });
 

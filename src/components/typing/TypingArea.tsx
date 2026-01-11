@@ -4,7 +4,7 @@ import { useRef, useEffect, useMemo } from "react";
 import type { TypingSession, ErrorMode, VisualSessionState } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { visualStateToCssClass } from "@/lib/typing/typingSelectors";
+import { visualStateToClassName } from "@/lib/typing/typingSelectors";
 
 interface TypingAreaProps {
   text: string;
@@ -58,21 +58,13 @@ export function TypingArea({ text, session, onKeyDown, onKeyUp, showSpaceMarkers
   // Split text into words for non-breaking display
   const words = useMemo(() => splitIntoWords(text), [text]);
 
-  // Helper to get character class - uses visualState if provided (single source of truth)
+  // Helper to get Tailwind classes for character styling
   const getCharClassName = (charIndex: number): string => {
-    // Use visualState if provided (preferred - from new state machine)
-    if (visualState && visualState.characters[charIndex]) {
-      return visualStateToCssClass(visualState.characters[charIndex].visualState);
+    if (visualState?.characters[charIndex]) {
+      return visualStateToClassName(visualState.characters[charIndex].visualState);
     }
-
-    // Fallback to old logic for backwards compatibility
-    // (This can be removed once all callers provide visualState)
-    const typedChar = session.typedCharacters[charIndex];
-    if (!typedChar || typedChar.state === "pending") return "char-pending";
-    if (typedChar.state === "corrected") return "char-corrected";
-    if (typedChar.state === "incorrect") return "char-incorrect";
-    if (typedChar.state === "correct") return "char-correct";
-    return "char-pending";
+    // Fallback for pending state if visualState not available
+    return "text-gray-400";
   };
 
   // Check if character is at cursor position

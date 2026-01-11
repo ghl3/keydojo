@@ -153,22 +153,23 @@ export function deriveVisualState(state: TypingState): VisualSessionState {
 }
 
 /**
- * Map visual state to CSS class name - pure function
+ * Map visual state to Tailwind class names - pure function
+ * Returns utility classes directly (idiomatic Tailwind pattern)
  */
-export function visualStateToCssClass(visualState: VisualCharState): string {
+export function visualStateToClassName(visualState: VisualCharState): string {
   switch (visualState) {
     case "pending":
-      return "char-pending";
+      return "text-gray-400";
     case "correct":
-      return "char-correct";
+      return "text-gray-900";
     case "incorrect":
-      return "char-incorrect";
+      return "text-red-600 bg-red-100";
     case "corrected":
-      return "char-corrected";
+      return "text-gray-900 underline decoration-red-400 decoration-2";
     case "error-zone":
-      return "char-error-zone";
+      return "text-red-500 bg-red-50";
     default:
-      return "char-pending";
+      return "text-gray-400";
   }
 }
 
