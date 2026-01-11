@@ -1,4 +1,10 @@
-import type { UserStats, UserSettings, SessionResult } from "@/types";
+import type {
+  UserStats,
+  UserSettings,
+  SessionResult,
+  LegacySessionMode,
+} from "@/types";
+import { isLegacyMode, migrateLegacyMode } from "@/types";
 import { getDefaultUserStats } from "@/types/stats";
 import { getDefaultSettings } from "@/types/settings";
 import { aggregateSessionIntoStats } from "@/lib/stats/aggregator";
@@ -66,21 +72,44 @@ export function getUserSettings(): UserSettings {
     } else {
       errorMode = "correction-required";
     }
+  }
 
-    // Clean up old keys and save migrated settings
-    const { stopOnError: _, backspaceMode: __, ...rest } = saved;
-    const migrated = { ...rest, errorMode };
+  // Migrate from old SessionMode format (characterTypes + contentType)
+  // to new format (content: ContentModeConfig)
+  let migratedMode: UserSettings["defaultMode"] | undefined;
+  if (saved.defaultMode && isLegacyMode(saved.defaultMode)) {
+    migratedMode = migrateLegacyMode(saved.defaultMode);
+  }
+
+  // Build migrated settings if any migrations occurred
+  const needsMigration =
+    ("stopOnError" in saved || "backspaceMode" in saved) ||
+    (saved.defaultMode && isLegacyMode(saved.defaultMode));
+
+  if (needsMigration) {
+    const { stopOnError: _, backspaceMode: __, defaultMode: ___, ...rest } = saved;
+    const migrated = {
+      ...rest,
+      ...(errorMode ? { errorMode } : {}),
+      ...(migratedMode ? { defaultMode: migratedMode } : {}),
+    };
     set(STORAGE_KEYS.USER_SETTINGS, migrated);
   }
 
   // Merge saved settings with defaults to ensure new fields have values
-  return { ...defaults, ...saved, ...(errorMode ? { errorMode } : {}) };
+  return {
+    ...defaults,
+    ...saved,
+    ...(errorMode ? { errorMode } : {}),
+    ...(migratedMode ? { defaultMode: migratedMode } : {}),
+  };
 }
 
 // Legacy settings types for migration
 interface LegacySettings {
   stopOnError?: boolean;
   backspaceMode?: "disabled" | "errors-only" | "full";
+  defaultMode?: LegacySessionMode;
 }
 
 export function saveUserSettings(settings: UserSettings): void {

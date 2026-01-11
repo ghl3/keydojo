@@ -1,4 +1,4 @@
-import type { SessionMode, ContentType, CharacterTypeFlags } from "@/types";
+import type { LegacySessionMode, ContentType, CharacterTypeFlags } from "@/types";
 import type { TextLengthOption } from "@/types/settings";
 import { TEXT_LENGTH_CHARS } from "@/types/settings";
 import { getAllWords } from "./wordLists";
@@ -8,8 +8,11 @@ import { getAllCodeSnippets } from "./codeSnippets";
 import { getNumberSequences, getAllNumberSentences } from "./numbersContent";
 import { getPunctuationDrills, getAllPunctuationSentences } from "./punctuationContent";
 
+/**
+ * @deprecated Use generateContent from @/lib/text/generators instead
+ */
 interface TextGeneratorOptions {
-  mode: SessionMode;
+  mode: LegacySessionMode;
   length: TextLengthOption;
   weakKeys?: string[];
   adaptiveIntensity?: number; // 0-1, how much to weight weak keys

@@ -1,4 +1,5 @@
 import type { SessionMode } from "./session";
+import { getDefaultContentMode } from "./generators";
 
 // User preferences
 export interface UserSettings {
@@ -51,14 +52,7 @@ export const FONT_SIZE_VALUES: Record<FontSize, string> = {
 export function getDefaultSettings(): UserSettings {
   return {
     defaultMode: {
-      characterTypes: {
-        lowercaseLetters: true,
-        uppercaseLetters: false,
-        numbers: false,
-        punctuation: false,
-        spaces: true,
-      },
-      contentType: "words",
+      content: getDefaultContentMode(),
     },
     // Typing behavior
     spaceMode: "single",

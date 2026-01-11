@@ -6,6 +6,7 @@ import type {
   CharCategory,
   ContentType,
 } from "@/types";
+import { getContentType } from "@/types";
 import { createDefaultKeyStats } from "@/types/stats";
 import { classifyChar } from "./classifier";
 import { updateSpacedRepetition } from "./spacedRepetition";
@@ -93,7 +94,7 @@ export function aggregateSessionIntoStats(
 
   // Update content type stats
   const contentTypeStats = { ...currentStats.contentTypeStats };
-  const contentType = session.mode.contentType;
+  const contentType = getContentType(session.mode);
   const ctStats = contentTypeStats[contentType];
 
   ctStats.totalAttempts += session.totalCharacters;

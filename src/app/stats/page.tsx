@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Header } from "@/components/layout/Header";
 import { SessionSummary } from "@/components/stats/SessionSummary";
 import type { CharCategory, ContentType, SessionResult } from "@/types";
+import { getContentType } from "@/types";
 
 export default function StatsPage() {
   const { userStats, isLoaded, resetStats } = useLocalStorage();
@@ -277,7 +278,7 @@ export default function StatsPage() {
                             </span>
                           </td>
                           <td className="py-2 capitalize">
-                            {session.mode.contentType}
+                            {getContentType(session.mode)}
                           </td>
                           <td className="py-2 text-right font-medium">
                             {session.grossWPM}

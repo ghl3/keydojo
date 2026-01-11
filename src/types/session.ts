@@ -1,4 +1,12 @@
 import type { ErrorMode } from "./settings";
+import type {
+  ContentModeConfig,
+  WordsModeOptions,
+  TextModeOptions,
+  CodeModeOptions,
+  CodeLanguage,
+  ContentType,
+} from "./generators";
 
 // Character states during typing (stored state)
 export type CharacterState = "pending" | "correct" | "incorrect" | "corrected";
@@ -56,13 +64,26 @@ export interface TypingConfig {
   errorMode: ErrorMode;
 }
 
-// Session mode configuration
+// ============= NEW HIERARCHICAL MODE SYSTEM =============
+
+// Re-export for convenience
+export type {
+  ContentModeConfig,
+  WordsModeOptions,
+  TextModeOptions,
+  CodeModeOptions,
+  CodeLanguage,
+  ContentType,
+};
+
+// New session mode with hierarchical content options
 export interface SessionMode {
-  characterTypes: CharacterTypeFlags;
-  contentType: ContentType;
+  content: ContentModeConfig;
 }
 
-// Combinable character type flags
+// ============= LEGACY TYPES (for backwards compatibility) =============
+
+// Legacy character type flags - kept for migration and stats
 export interface CharacterTypeFlags {
   lowercaseLetters: boolean;
   uppercaseLetters: boolean;
@@ -71,7 +92,118 @@ export interface CharacterTypeFlags {
   spaces: boolean;
 }
 
-export type ContentType = "words" | "sentences" | "paragraphs" | "code";
+// Legacy session mode - used for migration from old format
+export interface LegacySessionMode {
+  characterTypes: CharacterTypeFlags;
+  contentType: ContentType;
+}
+
+// ============= MIGRATION HELPERS =============
+
+/**
+ * Convert new SessionMode to legacy CharacterTypeFlags for backwards compatibility
+ * with stats tracking and other systems that expect the old format.
+ */
+export function toLegacyCharacterTypes(mode: SessionMode): CharacterTypeFlags {
+  const { content } = mode;
+
+  switch (content.type) {
+    case "words":
+      return {
+        lowercaseLetters: content.options.lowercase,
+        uppercaseLetters: content.options.uppercase,
+        numbers: content.options.numbers,
+        punctuation: content.options.punctuation,
+        spaces: true,
+      };
+    case "sentences":
+    case "paragraphs":
+      return {
+        lowercaseLetters: true,
+        uppercaseLetters: true,
+        numbers: content.options.numbers,
+        punctuation: content.options.punctuation,
+        spaces: true,
+      };
+    case "code":
+      // Code mode has all characters enabled
+      return {
+        lowercaseLetters: true,
+        uppercaseLetters: true,
+        numbers: true,
+        punctuation: true,
+        spaces: true,
+      };
+  }
+}
+
+/**
+ * Get the content type from a SessionMode
+ */
+export function getContentType(mode: SessionMode): ContentType {
+  return mode.content.type;
+}
+
+/**
+ * Migrate legacy session mode to new format
+ */
+export function migrateLegacyMode(legacy: LegacySessionMode): SessionMode {
+  const { characterTypes, contentType } = legacy;
+
+  switch (contentType) {
+    case "words":
+      return {
+        content: {
+          type: "words",
+          options: {
+            lowercase: characterTypes.lowercaseLetters,
+            uppercase: characterTypes.uppercaseLetters,
+            numbers: characterTypes.numbers,
+            punctuation: characterTypes.punctuation,
+            specialChars: false,
+          },
+        },
+      };
+    case "sentences":
+      return {
+        content: {
+          type: "sentences",
+          options: {
+            numbers: characterTypes.numbers,
+            punctuation: characterTypes.punctuation,
+          },
+        },
+      };
+    case "paragraphs":
+      return {
+        content: {
+          type: "paragraphs",
+          options: {
+            numbers: characterTypes.numbers,
+            punctuation: characterTypes.punctuation,
+          },
+        },
+      };
+    case "code":
+      return {
+        content: {
+          type: "code",
+          options: {
+            language: "mixed",
+          },
+        },
+      };
+  }
+}
+
+/**
+ * Check if a mode object is in the legacy format
+ */
+export function isLegacyMode(
+  mode: SessionMode | LegacySessionMode
+): mode is LegacySessionMode {
+  return "characterTypes" in mode && "contentType" in mode;
+}
 
 // Active typing session
 export interface TypingSession {

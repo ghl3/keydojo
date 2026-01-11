@@ -10,9 +10,10 @@ import { Header } from "@/components/layout/Header";
 import { SettingsPanel } from "@/components/ui/SettingsPanel";
 import { useTypingStateMachine } from "@/hooks/useTypingStateMachine";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { generateBaseText, transformText } from "@/lib/text/generator";
+import { generateContent } from "@/lib/text/generators";
+import { toGeneratorOptions } from "@/types/generators";
 import { getUserSettings, updateUserSettings } from "@/lib/storage/localStorage";
-import { getDefaultSettings, FONT_SIZE_VALUES } from "@/types/settings";
+import { getDefaultSettings, FONT_SIZE_VALUES, TEXT_LENGTH_CHARS } from "@/types/settings";
 import type { UserSettings } from "@/types/settings";
 import type { SessionMode, SessionResult } from "@/types";
 
@@ -50,24 +51,16 @@ export default function Home() {
   // Extract mode from settings for convenience
   const mode = settings.defaultMode;
 
-  // Generate base text - only regenerates when content type, length, character types, or textKey changes
-  // This is the "canonical" text with all features (case, punctuation, numbers)
-  // characterTypes is passed to handle edge cases like numbers-only or punctuation-only modes
-  const baseText = useMemo(() => {
-    return generateBaseText({
-      contentType: mode.contentType,
-      length: settings.textLength,
+  // Generate text using the new content generators
+  // Each generator handles its own options (numbers, punctuation, etc.) at generation time
+  const text = useMemo(() => {
+    const generatorInput = toGeneratorOptions(mode.content, {
+      targetLength: TEXT_LENGTH_CHARS[settings.textLength],
       weakKeys: settings.adaptiveDifficulty ? userStats.weakestKeys : [],
       adaptiveIntensity: settings.adaptiveDifficulty ? settings.adaptiveIntensity : 0,
-      characterTypes: mode.characterTypes,
     });
-  }, [mode.contentType, mode.characterTypes, settings.textLength, settings.adaptiveDifficulty, settings.adaptiveIntensity, textKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Transform base text based on character type settings
-  // This updates when toggling uppercase, punctuation, numbers, etc.
-  const text = useMemo(() => {
-    return transformText(baseText, mode.characterTypes);
-  }, [baseText, mode.characterTypes]);
+    return generateContent(generatorInput).text;
+  }, [mode.content, settings.textLength, settings.adaptiveDifficulty, settings.adaptiveIntensity, textKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleComplete = useCallback(
     (result: SessionResult) => {
