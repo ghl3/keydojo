@@ -5,9 +5,9 @@ import type {
   PairStats,
   CharCategory,
   ContentType,
-} from "@/types";
-import { getContentType } from "@/types";
-import { createDefaultKeyStats } from "@/types/stats";
+} from "./types";
+import { getContentType } from "@/lib/session";
+import { createDefaultKeyStats } from "./defaults";
 import { classifyChar } from "./classifier";
 import { updateSpacedRepetition } from "./spacedRepetition";
 

@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useEffect, useMemo } from "react";
-import type { TypingSession, ErrorMode, VisualSessionState } from "@/types";
+import type { TypingSession } from "@/lib/session";
+import type { VisualSessionState } from "@/lib/typing";
+import type { ErrorMode } from "@/lib/settings";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { visualStateToClassName } from "@/lib/typing/typingSelectors";

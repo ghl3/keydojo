@@ -1,4 +1,4 @@
-import type { KeyDefinition, KeyState } from "@/types/keyboard";
+import type { KeyDefinition, KeyState } from "@/lib/keyboard";
 
 interface KeyProps {
   keyDef: KeyDefinition;

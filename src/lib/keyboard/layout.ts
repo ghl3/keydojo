@@ -1,4 +1,4 @@
-import type { KeyDefinition, KeyboardLayout } from "@/types/keyboard";
+import type { KeyDefinition, KeyboardLayout } from "./types";
 
 // Standard US QWERTY keyboard layout
 export const QWERTY_LAYOUT: KeyboardLayout = {

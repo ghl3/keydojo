@@ -8,8 +8,7 @@ import {
   calculateAccuracy,
 } from "./typingSelectors";
 import { createInitialState, typingReducer } from "./typingReducer";
-import type { TypedCharacter, CharacterState } from "@/types/session";
-import type { ErrorMode } from "@/types/settings";
+import type { TypedCharacter, CharacterState, ErrorMode } from "./types";
 
 // Helper to create a typed character
 function createChar(

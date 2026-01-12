@@ -5,8 +5,8 @@ import type {
   VisualCharState,
   VisualCharacter,
   VisualSessionState,
-} from "@/types/session";
-import type { ErrorMode } from "@/types/settings";
+  ErrorMode,
+} from "./types";
 
 // Debug logging - set to true to enable console logs
 const DEBUG_SELECTORS = false;

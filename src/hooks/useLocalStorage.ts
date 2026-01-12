@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { UserStats, SessionResult } from "@/types";
-import { getDefaultUserStats } from "@/types/stats";
+import type { SessionResult } from "@/lib/session";
+import type { UserStats } from "@/lib/stats";
+import { getDefaultUserStats } from "@/lib/stats";
 import {
   getUserStats,
   saveUserStats,
   updateUserStats as updateStorageStats,
-} from "@/lib/storage/localStorage";
+} from "@/lib/storage";
 
 export function useLocalStorage() {
   const [userStats, setUserStats] = useState<UserStats>(getDefaultUserStats());

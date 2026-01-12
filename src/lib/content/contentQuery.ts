@@ -18,7 +18,7 @@ import type {
   TaggedSentence,
   TaggedParagraph,
   TaggedCode,
-} from "@/types/tags";
+} from "./types";
 import {
   getTaggedWords,
   getTaggedSentences,

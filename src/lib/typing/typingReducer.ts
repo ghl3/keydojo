@@ -4,8 +4,8 @@ import type {
   TypingConfig,
   TypedCharacter,
   CharacterState,
-} from "@/types/session";
-import type { ErrorMode } from "@/types/settings";
+  ErrorMode,
+} from "./types";
 
 // Debug logging - set to true to enable console logs
 const DEBUG_REDUCER = false;

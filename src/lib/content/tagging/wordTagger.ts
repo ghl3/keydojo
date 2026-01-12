@@ -10,7 +10,7 @@ import type {
   WordCharacterTag,
   WordKeyboardTag,
   TaggedWord,
-} from "@/types/tags";
+} from "../types";
 
 // Keyboard row definitions
 const HOME_ROW = new Set("asdfghjkl".split(""));

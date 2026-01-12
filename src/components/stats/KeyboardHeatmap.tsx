@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { QWERTY_LAYOUT } from "@/lib/keyboard/layout";
+import { QWERTY_LAYOUT } from "@/lib/keyboard";
 import { Card } from "@/components/ui/Card";
-import type { KeyDefinition } from "@/types/keyboard";
-import type { KeyStats } from "@/types/stats";
+import type { KeyDefinition } from "@/lib/keyboard";
+import type { KeyStats } from "@/lib/stats";
 
 interface KeyboardHeatmapProps {
   keyStats: Record<string, KeyStats>;

@@ -11,7 +11,7 @@ import type {
   SentenceThemeTag,
   SentencePunctuationTag,
   TaggedSentence,
-} from "@/types/tags";
+} from "../types";
 
 // Theme keywords for detection
 const THEME_KEYWORDS: Record<SentenceThemeTag, string[]> = {

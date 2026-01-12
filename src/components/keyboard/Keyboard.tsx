@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { Key } from "./Key";
-import { QWERTY_LAYOUT, getKeyDefinitionForChar, needsShift } from "@/lib/keyboard/layout";
-import type { KeyState } from "@/types/keyboard";
+import { QWERTY_LAYOUT, getKeyDefinitionForChar, needsShift } from "@/lib/keyboard";
+import type { KeyState } from "@/lib/keyboard";
 import { Card } from "@/components/ui/Card";
 
 interface KeyboardProps {

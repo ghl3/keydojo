@@ -1,4 +1,5 @@
-import type { TypingSession, LiveStats, CharCategory } from "@/types";
+import type { LiveStats, CharCategory } from "./types";
+import type { TypingSession } from "@/lib/session";
 import { classifyChar } from "./classifier";
 
 // Standard WPM calculation (5 characters = 1 word)

@@ -9,7 +9,7 @@ import { SentencesGenerator } from "../SentencesGenerator";
 import { ParagraphsGenerator } from "../ParagraphsGenerator";
 import { CodeGenerator } from "../CodeGenerator";
 import { generateContent } from "../generateContent";
-import type { CodeLanguage, ContentGeneratorInput } from "@/types/generators";
+import type { CodeLanguage, ContentGeneratorInput } from "../../types";
 
 // ============= WORDS GENERATOR =============
 

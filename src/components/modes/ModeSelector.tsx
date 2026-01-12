@@ -1,16 +1,12 @@
 "use client";
 
-import type {
-  SessionMode,
-  ContentModeConfig,
-  ContentType,
-  CodeLanguage,
-} from "@/types";
+import type { SessionMode, ContentModeConfig } from "@/lib/session";
+import type { ContentType, CodeLanguage } from "@/lib/content";
 import {
   getDefaultWordsOptions,
   getDefaultTextOptions,
   getDefaultCodeOptions,
-} from "@/types/generators";
+} from "@/lib/content";
 import { Toggle } from "@/components/ui/Toggle";
 import { Card } from "@/components/ui/Card";
 

@@ -5,17 +5,16 @@ import { TypingArea } from "@/components/typing/TypingArea";
 import { Keyboard } from "@/components/keyboard/Keyboard";
 import { ModeSelector } from "@/components/modes/ModeSelector";
 import { StatsDisplay } from "@/components/stats/StatsDisplay";
-import { SessionSummary } from "@/components/stats/SessionSummary";
+import { SessionSummary } from "@/components/stats/SessionSummary/";
 import { Header } from "@/components/layout/Header";
 import { SettingsPanel } from "@/components/ui/SettingsPanel";
-import { useTypingStateMachine } from "@/hooks/useTypingStateMachine";
+import { useTypingStateMachine } from "@/lib/typing";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { generateContent } from "@/lib/text/generators";
-import { toGeneratorOptions } from "@/types/generators";
-import { getUserSettings, updateUserSettings } from "@/lib/storage/localStorage";
-import { getDefaultSettings, FONT_SIZE_VALUES, TEXT_LENGTH_CHARS } from "@/types/settings";
-import type { UserSettings } from "@/types/settings";
-import type { SessionMode, SessionResult } from "@/types";
+import { generateContent, toGeneratorOptions } from "@/lib/content";
+import { getUserSettings, updateUserSettings } from "@/lib/storage";
+import { getDefaultSettings, FONT_SIZE_VALUES, TEXT_LENGTH_CHARS } from "@/lib/settings";
+import type { UserSettings } from "@/lib/settings";
+import type { SessionMode, SessionResult } from "@/lib/session";
 import { getWeakestKeys } from "@/lib/stats/selectors";
 
 export default function Home() {

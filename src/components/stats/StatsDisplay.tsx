@@ -1,4 +1,4 @@
-import type { LiveStats } from "@/types";
+import type { LiveStats } from "@/lib/stats";
 import { Card } from "@/components/ui/Card";
 
 interface StatsDisplayProps {

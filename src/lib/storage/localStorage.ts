@@ -1,13 +1,9 @@
-import type {
-  UserStats,
-  UserSettings,
-  SessionResult,
-  LegacySessionMode,
-} from "@/types";
-import { isLegacyMode, migrateLegacyMode } from "@/types";
-import { getDefaultUserStats } from "@/types/stats";
-import { getDefaultSettings } from "@/types/settings";
-import { aggregateSessionIntoStats } from "@/lib/stats/aggregator";
+import type { SessionResult, LegacySessionMode } from "@/lib/session";
+import type { UserStats } from "@/lib/stats";
+import type { UserSettings } from "@/lib/settings";
+import { isLegacyMode, migrateLegacyMode } from "@/lib/session";
+import { getDefaultUserStats, aggregateSessionIntoStats } from "@/lib/stats";
+import { getDefaultSettings } from "@/lib/settings";
 
 const STORAGE_KEYS = {
   USER_STATS: "keydojo_user_stats",

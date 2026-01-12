@@ -10,9 +10,9 @@
 import type {
   ParagraphsGeneratorOptions,
   GeneratedContent,
-} from "@/types/generators";
+  TaggedParagraph,
+} from "../types";
 import { queryTaggedParagraphs } from "../contentQuery";
-import type { TaggedParagraph } from "@/types/tags";
 import { selectWeightedItemFromTagged, stripNumbers, stripPunctuation } from "./utils";
 
 export class ParagraphsGenerator {

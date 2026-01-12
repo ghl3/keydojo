@@ -3,18 +3,9 @@
 import { useReducer, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import type { SessionMode, SessionResult } from "@/lib/session";
 import type { LiveStats } from "@/lib/stats";
-import type {
-  TypingState,
-  VisualSessionState,
-  ErrorMode,
-} from "@/lib/typing";
-import {
-  typingReducer,
-  createInitialState,
-  deriveVisualState,
-  countMistakes,
-  calculateAccuracy,
-} from "@/lib/typing";
+import type { TypingState, VisualSessionState, ErrorMode } from "./types";
+import { typingReducer, createInitialState } from "./typingReducer";
+import { deriveVisualState, countMistakes, calculateAccuracy } from "./typingSelectors";
 import { calculateCategoryBreakdown } from "@/lib/stats";
 import {
   findWordBoundaries,

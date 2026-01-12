@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import type { UserSettings, SpaceMode, NewlineMode, ErrorMode, FontSize } from "@/types/settings";
+import type { UserSettings, SpaceMode, NewlineMode, ErrorMode, FontSize } from "@/lib/settings";
 import { Toggle } from "./Toggle";
 
 interface SettingsPanelProps {

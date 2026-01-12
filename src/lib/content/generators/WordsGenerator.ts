@@ -11,7 +11,7 @@
 import type {
   WordsGeneratorOptions,
   GeneratedContent,
-} from "@/types/generators";
+} from "../types";
 import { getAllWords } from "../wordLists";
 import { selectWeightedItem, selectRandom } from "./utils";
 

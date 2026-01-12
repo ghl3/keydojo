@@ -1,33 +1,19 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { SessionResult, CharCategory } from "@/types";
-import type { UserStats } from "@/types/stats";
+import type { SessionResult, CharCategory } from "@/lib/session";
+import type { UserStats } from "@/lib/stats";
 import { Card } from "@/components/ui/Card";
 import { useDraggable } from "@/hooks/useDraggable";
+import { getAccuracyColor, getWpmColor, formatDuration } from "./helpers";
+import { CategoryBreakdown } from "./CategoryBreakdown";
+import { MistakesList } from "./MistakesList";
 
 interface SessionSummaryProps {
   result: SessionResult;
   userStats?: UserStats;
   onClose: () => void;
   onDismiss: () => void;
-}
-
-// Color helpers for performance metrics
-function getAccuracyColor(accuracy: number): string {
-  if (accuracy >= 98) return "text-green-600";
-  if (accuracy >= 95) return "text-green-500";
-  if (accuracy >= 90) return "text-yellow-600";
-  if (accuracy >= 85) return "text-yellow-500";
-  return "text-red-500";
-}
-
-function getWpmColor(wpm: number): string {
-  if (wpm >= 80) return "text-green-600";
-  if (wpm >= 60) return "text-green-500";
-  if (wpm >= 40) return "text-yellow-600";
-  if (wpm >= 25) return "text-yellow-500";
-  return "text-gray-600";
 }
 
 export function SessionSummary({ result, userStats, onClose, onDismiss }: SessionSummaryProps) {
@@ -60,16 +46,6 @@ export function SessionSummary({ result, userStats, onClose, onDismiss }: Sessio
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, onDismiss]);
-
-  const formatDuration = (ms: number) => {
-    const seconds = Math.round(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    if (minutes > 0) {
-      return `${minutes}m ${remainingSeconds}s`;
-    }
-    return `${seconds}s`;
-  };
 
   // Get top key mistakes - only keys with more than 1 error
   const topMistakes = Object.entries(result.mistakesByKey)
@@ -200,108 +176,14 @@ export function SessionSummary({ result, userStats, onClose, onDismiss }: Sessio
         </div>
 
         {/* Category breakdown */}
-        {categoryPerformance.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              By Character Type
-            </h3>
-            <div className="space-y-2">
-              {categoryPerformance.map(({ category, attempts, mistakes, accuracy, wpm }) => (
-                <div key={category} className="flex items-center justify-between text-sm py-1.5 px-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <span className="capitalize text-gray-700 font-medium w-24">{category}</span>
-                    <span className="text-gray-500 text-xs">
-                      {attempts} typed
-                      {mistakes > 0 && (
-                        <span className="text-red-500 ml-2">{mistakes} error{mistakes !== 1 ? "s" : ""}</span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`${getWpmColor(wpm)} tabular-nums`}>{wpm} WPM</span>
-                    <span className={`font-medium tabular-nums w-12 text-right ${getAccuracyColor(accuracy)}`}>
-                      {accuracy}%
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <CategoryBreakdown categoryPerformance={categoryPerformance} />
 
-        {/* Top mistakes - only show if there are keys/pairs with more than 1 error */}
-        {(topMistakes.length > 0 || topPairMistakes.length > 0) && (
-          <div className="mb-6">
-            {topMistakes.length > 0 && (
-              <>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Keys to Practice
-                </h3>
-                <div className="space-y-1.5 mb-3">
-                  {topMistakes.map(([key, count]) => {
-                    const historicalRate = userStats?.keyStats[key]?.mistakeRate;
-                    const displayKey = key === " " ? "Space" : key;
-
-                    return (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between px-3 py-1.5 bg-red-50 rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono font-medium text-red-700 w-8 text-center bg-red-100 rounded px-1">
-                            {displayKey}
-                          </span>
-                          <span className="text-sm text-red-600">
-                            {count} error{count !== 1 ? "s" : ""} this session
-                          </span>
-                        </div>
-                        {historicalRate !== undefined && historicalRate > 0 && (
-                          <span className="text-xs text-gray-500">
-                            {(historicalRate * 100).toFixed(0)}% total
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-            {topPairMistakes.length > 0 && (
-              <>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Pairs to Practice
-                </h3>
-                <div className="space-y-1.5">
-                  {topPairMistakes.map(([pair, count]) => {
-                    const historicalRate = userStats?.pairStats[pair]?.mistakeRate;
-                    const displayPair = pair.replace(/ /g, "␣");
-
-                    return (
-                      <div
-                        key={pair}
-                        className="flex items-center justify-between px-3 py-1.5 bg-orange-50 rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono font-medium text-orange-700 w-10 text-center bg-orange-100 rounded px-1">
-                            {displayPair}
-                          </span>
-                          <span className="text-sm text-orange-600">
-                            {count} error{count !== 1 ? "s" : ""} this session
-                          </span>
-                        </div>
-                        {historicalRate !== undefined && historicalRate > 0 && (
-                          <span className="text-xs text-gray-500">
-                            {(historicalRate * 100).toFixed(0)}% total
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        )}
+        {/* Top mistakes */}
+        <MistakesList
+          topMistakes={topMistakes}
+          topPairMistakes={topPairMistakes}
+          userStats={userStats}
+        />
 
         {/* Close button */}
         <button

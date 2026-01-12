@@ -10,9 +10,9 @@
 import type {
   SentencesGeneratorOptions,
   GeneratedContent,
-} from "@/types/generators";
+  TaggedSentence,
+} from "../types";
 import { querySentences, queryTaggedSentences } from "../contentQuery";
-import type { TaggedSentence } from "@/types/tags";
 import { selectWeightedItemFromTagged, stripNumbers, stripPunctuation } from "./utils";
 
 export class SentencesGenerator {

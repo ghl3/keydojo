@@ -10,7 +10,7 @@ import type {
   CodeComplexityTag,
   CodePatternTag,
   TaggedCode,
-} from "@/types/tags";
+} from "../types";
 
 // Language detection patterns
 const LANGUAGE_PATTERNS: Record<CodeLanguageTag, RegExp[]> = {

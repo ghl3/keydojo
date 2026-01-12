@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Card } from "@/components/ui/Card";
 import { Header } from "@/components/layout/Header";
-import { SessionSummary } from "@/components/stats/SessionSummary";
+import { SessionSummary } from "@/components/stats/SessionSummary/";
 import { KeyboardHeatmap } from "@/components/stats/KeyboardHeatmap";
-import type { CharCategory, ContentType, SessionResult } from "@/types";
-import { getContentType } from "@/types";
+import type { CharCategory, SessionResult } from "@/lib/session";
+import type { ContentType } from "@/lib/content";
+import { getContentType } from "@/lib/session";
 import { getWeakestKeys } from "@/lib/stats/selectors";
 
 export default function StatsPage() {
