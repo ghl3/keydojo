@@ -1,7 +1,7 @@
 // Session module - session types, mode utilities, and boundaries
 
 // Types
-export * from "./types";
+export * from "./sessionResult";
 
 // Mode utilities
 export {

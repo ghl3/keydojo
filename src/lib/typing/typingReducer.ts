@@ -5,7 +5,7 @@ import type {
   TypedCharacter,
   CharacterState,
   ErrorMode,
-} from "./types";
+} from "./typingState";
 
 // Debug logging - set to true to enable console logs
 const DEBUG_REDUCER = false;

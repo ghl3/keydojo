@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { typingReducer, createInitialState } from "./typingReducer";
-import type { TypingState, TypingAction, ErrorMode } from "./types";
+import type { TypingState, TypingAction, ErrorMode } from "./typingState";
 
 // Helper to create initial state with a specific error mode
 function createState(text: string, errorMode: ErrorMode): TypingState {

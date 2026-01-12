@@ -10,7 +10,7 @@ import type {
   TaggedSentence,
   TaggedParagraph,
   TaggedCode,
-} from "./types";
+} from "./contentTypes";
 import { tagWords } from "./tagging/wordTagger";
 import { tagSentences } from "./tagging/sentenceTagger";
 import { tagParagraphs } from "./tagging/paragraphTagger";

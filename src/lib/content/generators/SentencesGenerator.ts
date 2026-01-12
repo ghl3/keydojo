@@ -11,7 +11,7 @@ import type {
   SentencesGeneratorOptions,
   GeneratedContent,
   TaggedSentence,
-} from "../types";
+} from "../contentTypes";
 import { querySentences, queryTaggedSentences } from "../contentQuery";
 import { selectWeightedItemFromTagged, stripNumbers, stripPunctuation } from "./utils";
 

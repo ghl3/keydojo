@@ -7,7 +7,7 @@ import type {
   ContentTypeStats,
   CharCategory,
   ContentType,
-} from "./types";
+} from "./userStats";
 
 // Create default category stats
 export function createDefaultCategoryStats(category: CharCategory): CategoryStats {

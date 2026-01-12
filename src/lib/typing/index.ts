@@ -1,7 +1,7 @@
 // Typing module - state machine for typing sessions
 
 // Types
-export * from "./types";
+export * from "./typingState";
 
 // Reducer
 export { typingReducer, createInitialState } from "./typingReducer";
@@ -16,5 +16,17 @@ export {
   calculateAccuracy,
 } from "./typingSelectors";
 
-// Hook
-export { useTypingStateMachine } from "./useTypingStateMachine";
+// Session helpers
+export {
+  createDefaultBoundaryErrorState,
+  createDefaultLiveStats,
+  calculateGrossWPM,
+  calculateLiveStatsFromState,
+  buildSessionResult,
+  IDLE_THRESHOLD_MS,
+} from "./sessionHelpers";
+export type {
+  BoundaryErrorState,
+  UseTypingStateMachineOptions,
+  BuildSessionResultParams,
+} from "./sessionHelpers";

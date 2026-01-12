@@ -1,6 +1,6 @@
 // Default settings and constants
 
-import type { UserSettings, FontSize, TextLengthOption } from "./types";
+import type { UserSettings, FontSize, TextLengthOption } from "./userSettings";
 import { getDefaultContentMode } from "@/lib/content";
 
 // Length mappings

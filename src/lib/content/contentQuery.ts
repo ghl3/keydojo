@@ -18,7 +18,7 @@ import type {
   TaggedSentence,
   TaggedParagraph,
   TaggedCode,
-} from "./types";
+} from "./contentTypes";
 import {
   getTaggedWords,
   getTaggedSentences,

@@ -4,7 +4,7 @@ import type {
   SessionMode,
   CharacterTypeFlags,
   LegacySessionMode,
-} from "./types";
+} from "./sessionResult";
 import type { ContentType } from "@/lib/content";
 
 /**

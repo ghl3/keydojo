@@ -6,7 +6,7 @@ import type {
   VisualCharacter,
   VisualSessionState,
   ErrorMode,
-} from "./types";
+} from "./typingState";
 
 // Debug logging - set to true to enable console logs
 const DEBUG_SELECTORS = false;

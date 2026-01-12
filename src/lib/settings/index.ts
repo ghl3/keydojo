@@ -1,7 +1,7 @@
 // Settings module - user preferences and defaults
 
 // Types
-export * from "./types";
+export * from "./userSettings";
 
 // Defaults and constants
 export {

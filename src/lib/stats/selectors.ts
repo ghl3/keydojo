@@ -1,4 +1,4 @@
-import type { UserStats, KeyStats, PairStats, CharCategory } from "./types";
+import type { UserStats, KeyStats, PairStats, CharCategory } from "./userStats";
 
 /**
  * Get weakest keys sorted by mistake rate.

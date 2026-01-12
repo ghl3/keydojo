@@ -1,7 +1,7 @@
 // Stats module - statistics, analytics, and calculations
 
 // Types
-export * from "./types";
+export * from "./userStats";
 
 // Defaults
 export {

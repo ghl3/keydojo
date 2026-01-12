@@ -1,4 +1,4 @@
-import type { LiveStats, CharCategory } from "./types";
+import type { LiveStats, CharCategory } from "./userStats";
 import type { TypingSession } from "@/lib/session";
 import { classifyChar } from "./classifier";
 

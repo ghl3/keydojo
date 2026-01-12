@@ -1,4 +1,4 @@
-import type { KeyStats } from "./types";
+import type { KeyStats } from "./userStats";
 
 // SM-2 algorithm parameters
 const MIN_EASE_FACTOR = 1.3;

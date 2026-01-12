@@ -4,7 +4,7 @@
  * This factory function delegates to the appropriate generator based on content type.
  */
 
-import type { ContentGeneratorInput, GeneratedContent } from "../types";
+import type { ContentGeneratorInput, GeneratedContent } from "../contentTypes";
 import { WordsGenerator } from "./WordsGenerator";
 import { SentencesGenerator } from "./SentencesGenerator";
 import { ParagraphsGenerator } from "./ParagraphsGenerator";

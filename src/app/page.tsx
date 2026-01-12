@@ -8,7 +8,7 @@ import { StatsDisplay } from "@/components/stats/StatsDisplay";
 import { SessionSummary } from "@/components/stats/SessionSummary/";
 import { Header } from "@/components/layout/Header";
 import { SettingsPanel } from "@/components/ui/SettingsPanel";
-import { useTypingStateMachine } from "@/lib/typing";
+import { useTypingStateMachine } from "@/hooks";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { generateContent, toGeneratorOptions } from "@/lib/content";
 import { getUserSettings, updateUserSettings } from "@/lib/storage";

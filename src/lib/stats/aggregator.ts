@@ -5,7 +5,7 @@ import type {
   PairStats,
   CharCategory,
   ContentType,
-} from "./types";
+} from "./userStats";
 import { getContentType } from "@/lib/session";
 import { createDefaultKeyStats } from "./defaults";
 import { classifyChar } from "./classifier";

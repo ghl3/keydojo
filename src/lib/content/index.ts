@@ -1,7 +1,7 @@
 // Content module - text generation, tagging, and querying
 
 // Types
-export * from "./types";
+export * from "./contentTypes";
 
 // Generators
 export { generateContent } from "./generators";

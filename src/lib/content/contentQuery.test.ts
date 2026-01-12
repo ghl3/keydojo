@@ -9,7 +9,7 @@ import {
   queryParagraphs,
   queryCode,
   getTagStats,
-} from "../contentQuery";
+} from "./contentQuery";
 import {
   getTaggedWords,
   getTaggedSentences,
@@ -18,7 +18,7 @@ import {
   clearContentCache,
   warmContentCache,
   getContentStats,
-} from "../contentRegistry";
+} from "./contentRegistry";
 
 describe("Content Registry", () => {
   beforeEach(() => {

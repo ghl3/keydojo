@@ -1,44 +1,27 @@
 "use client";
 
 import { useReducer, useCallback, useEffect, useRef, useState, useMemo } from "react";
-import type { SessionMode, SessionResult } from "@/lib/session";
+import type { TypingSession } from "@/lib/session";
 import type { LiveStats } from "@/lib/stats";
-import type {
-  TypingState,
-  VisualSessionState,
-  ErrorMode,
-} from "@/lib/typing";
+import type { VisualSessionState } from "@/lib/typing";
 import {
   typingReducer,
   createInitialState,
   deriveVisualState,
-  countMistakes,
-  calculateAccuracy,
+  buildSessionResult,
+  createDefaultBoundaryErrorState,
+  createDefaultLiveStats,
+  calculateLiveStatsFromState,
+  IDLE_THRESHOLD_MS,
 } from "@/lib/typing";
-import { calculateCategoryBreakdown } from "@/lib/stats";
+import type { BoundaryErrorState, UseTypingStateMachineOptions } from "@/lib/typing";
 import {
   findWordBoundaries,
   findSentenceBoundaries,
   findParagraphBoundaries,
 } from "@/lib/session";
 
-// If user doesn't type for this long, stop counting time
-const IDLE_THRESHOLD_MS = 2000;
-
-interface UseTypingStateMachineOptions {
-  text: string;
-  mode: SessionMode;
-  onComplete?: (result: SessionResult) => void;
-  errorMode?: ErrorMode;
-  newlineMode?: "required" | "optional";
-}
-
-// Calculate WPM based on active typing time
-function calculateGrossWPM(charactersTyped: number, activeTimeMs: number): number {
-  const minutes = activeTimeMs / 60000;
-  const words = charactersTyped / 5;
-  return minutes > 0 ? Math.round(words / minutes) : 0;
-}
+export type { UseTypingStateMachineOptions } from "@/lib/typing";
 
 export function useTypingStateMachine({
   text,
@@ -58,16 +41,16 @@ export function useTypingStateMachine({
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [nextKey, setNextKey] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [liveStats, setLiveStats] = useState<LiveStats>(createDefaultLiveStats);
 
   // Timing refs (side effects, not part of pure state)
   const activeTypingTimeRef = useRef<number>(0);
   const lastKeystrokeTimeRef = useRef<number>(0);
 
   // Mistake tracking refs
-  const mistakesByKey = useRef<Record<string, number>>({});
-  const mistakesByPair = useRef<Record<string, number>>({});
-  // Track positions where we've already recorded a mistake (to avoid over-counting)
-  const recordedMistakePositions = useRef<Set<number>>(new Set());
+  const mistakesByKeyRef = useRef<Record<string, number>>({});
+  const mistakesByPairRef = useRef<Record<string, number>>({});
+  const recordedMistakePositionsRef = useRef<Set<number>>(new Set());
 
   // Boundary tracking
   const wordBoundaries = useMemo(() => findWordBoundaries(text), [text]);
@@ -75,14 +58,7 @@ export function useTypingStateMachine({
   const paragraphBoundaries = useMemo(() => findParagraphBoundaries(text), [text]);
 
   // Error tracking per boundary
-  const boundaryErrorState = useRef({
-    currentWordHasError: false,
-    currentSentenceHasError: false,
-    currentParagraphHasError: false,
-    wordsWithErrors: 0,
-    sentencesWithErrors: 0,
-    paragraphsWithErrors: 0,
-  });
+  const boundaryErrorStateRef = useRef<BoundaryErrorState>(createDefaultBoundaryErrorState());
 
   // Timeout refs for proper cleanup
   const activeKeyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -94,25 +70,11 @@ export function useTypingStateMachine({
     [state]
   );
 
-  // Live stats state
-  const [liveStats, setLiveStats] = useState<LiveStats>({
-    elapsedTime: 0,
-    currentWPM: 0,
-    currentAccuracy: 100,
-    charactersTyped: 0,
-    mistakeCount: 0,
-    progress: 0,
-  });
-
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      if (activeKeyTimeoutRef.current) {
-        clearTimeout(activeKeyTimeoutRef.current);
-      }
-      if (errorKeyTimeoutRef.current) {
-        clearTimeout(errorKeyTimeoutRef.current);
-      }
+      if (activeKeyTimeoutRef.current) clearTimeout(activeKeyTimeoutRef.current);
+      if (errorKeyTimeoutRef.current) clearTimeout(errorKeyTimeoutRef.current);
     };
   }, []);
 
@@ -130,80 +92,42 @@ export function useTypingStateMachine({
     if (state.status !== "active") return;
 
     const interval = setInterval(() => {
-      const typedCount = state.cursorPosition;
-      const mistakeCount = countMistakes(
-        state.characters.slice(0, state.cursorPosition)
-      );
-
-      const currentAccuracy = calculateAccuracy(typedCount, mistakeCount);
-
-      setLiveStats({
-        elapsedTime: activeTypingTimeRef.current,
-        currentWPM: calculateGrossWPM(typedCount, activeTypingTimeRef.current),
-        currentAccuracy,
-        charactersTyped: typedCount,
-        mistakeCount,
-        progress: state.text.length > 0
-          ? (typedCount / state.text.length) * 100
-          : 0,
-      });
+      setLiveStats(calculateLiveStatsFromState(state, activeTypingTimeRef.current));
     }, 100);
 
     return () => clearInterval(interval);
-  }, [state.status, state.cursorPosition, state.characters, state.text.length]);
+  }, [state]);
 
   // Reset when text or errorMode changes
   useEffect(() => {
     dispatch({ type: "RESET", text, errorMode });
-    mistakesByKey.current = {};
-    mistakesByPair.current = {};
-    recordedMistakePositions.current = new Set();
+    mistakesByKeyRef.current = {};
+    mistakesByPairRef.current = {};
+    recordedMistakePositionsRef.current = new Set();
     activeTypingTimeRef.current = 0;
     lastKeystrokeTimeRef.current = 0;
-    boundaryErrorState.current = {
-      currentWordHasError: false,
-      currentSentenceHasError: false,
-      currentParagraphHasError: false,
-      wordsWithErrors: 0,
-      sentencesWithErrors: 0,
-      paragraphsWithErrors: 0,
-    };
-    setLiveStats({
-      elapsedTime: 0,
-      currentWPM: 0,
-      currentAccuracy: 100,
-      charactersTyped: 0,
-      mistakeCount: 0,
-      progress: 0,
-    });
+    boundaryErrorStateRef.current = createDefaultBoundaryErrorState();
+    setLiveStats(createDefaultLiveStats());
   }, [text, errorMode]);
 
   // Helper to set active key with timeout
   const setActiveKeyWithTimeout = useCallback((key: string) => {
-    if (activeKeyTimeoutRef.current) {
-      clearTimeout(activeKeyTimeoutRef.current);
-    }
+    if (activeKeyTimeoutRef.current) clearTimeout(activeKeyTimeoutRef.current);
     setActiveKey(key);
-    activeKeyTimeoutRef.current = setTimeout(() => {
-      setActiveKey(null);
-    }, 150);
+    activeKeyTimeoutRef.current = setTimeout(() => setActiveKey(null), 150);
   }, []);
 
   // Helper to set error key with timeout
   const setErrorKeyWithTimeout = useCallback((key: string) => {
-    if (errorKeyTimeoutRef.current) {
-      clearTimeout(errorKeyTimeoutRef.current);
-    }
+    if (errorKeyTimeoutRef.current) clearTimeout(errorKeyTimeoutRef.current);
     setErrorKey(key);
-    errorKeyTimeoutRef.current = setTimeout(() => {
-      setErrorKey(null);
-    }, 200);
+    errorKeyTimeoutRef.current = setTimeout(() => setErrorKey(null), 200);
   }, []);
 
   // Update boundary error tracking
   const updateBoundaryErrors = useCallback(
     (newIndex: number, hadError: boolean, isComplete: boolean) => {
-      const bs = boundaryErrorState.current;
+      const bs = boundaryErrorStateRef.current;
 
       if (hadError) {
         bs.currentWordHasError = true;
@@ -232,6 +156,17 @@ export function useTypingStateMachine({
     [wordBoundaries, sentenceBoundaries, paragraphBoundaries]
   );
 
+  // Reset all state
+  const resetAllState = useCallback(() => {
+    dispatch({ type: "RESET", errorMode });
+    mistakesByKeyRef.current = {};
+    mistakesByPairRef.current = {};
+    recordedMistakePositionsRef.current = new Set();
+    activeTypingTimeRef.current = 0;
+    lastKeystrokeTimeRef.current = 0;
+    boundaryErrorStateRef.current = createDefaultBoundaryErrorState();
+  }, [errorMode]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       // Ignore modifier keys alone
@@ -241,20 +176,7 @@ export function useTypingStateMachine({
 
       // Handle escape to reset
       if (e.key === "Escape") {
-        dispatch({ type: "RESET", errorMode });
-        mistakesByKey.current = {};
-        mistakesByPair.current = {};
-        recordedMistakePositions.current = new Set();
-        activeTypingTimeRef.current = 0;
-        lastKeystrokeTimeRef.current = 0;
-        boundaryErrorState.current = {
-          currentWordHasError: false,
-          currentSentenceHasError: false,
-          currentParagraphHasError: false,
-          wordsWithErrors: 0,
-          sentencesWithErrors: 0,
-          paragraphsWithErrors: 0,
-        };
+        resetAllState();
         return;
       }
 
@@ -291,7 +213,6 @@ export function useTypingStateMachine({
       if (newlineMode === "optional" && expectedChar === "\n" && e.key !== "\n") {
         const nextChar = state.text[cursorPosition + 1];
         if (nextChar && e.key === nextChar) {
-          // Skip the newline - dispatch two TYPE_CHAR actions
           setErrorKey(null);
           dispatch({ type: "TYPE_CHAR", char: "\n", timestamp: now });
           dispatch({ type: "TYPE_CHAR", char: e.key, timestamp: now + 1 });
@@ -310,15 +231,15 @@ export function useTypingStateMachine({
         setErrorKeyWithTimeout(e.key);
 
         // Track mistake for expected character (only once per position)
-        if (!recordedMistakePositions.current.has(cursorPosition)) {
-          recordedMistakePositions.current.add(cursorPosition);
-          mistakesByKey.current[expectedChar] = (mistakesByKey.current[expectedChar] || 0) + 1;
+        if (!recordedMistakePositionsRef.current.has(cursorPosition)) {
+          recordedMistakePositionsRef.current.add(cursorPosition);
+          mistakesByKeyRef.current[expectedChar] = (mistakesByKeyRef.current[expectedChar] || 0) + 1;
 
           // Track mistake for letter pair
           if (cursorPosition > 0) {
             const prevChar = state.text[cursorPosition - 1];
             const pair = prevChar + expectedChar;
-            mistakesByPair.current[pair] = (mistakesByPair.current[pair] || 0) + 1;
+            mistakesByPairRef.current[pair] = (mistakesByPairRef.current[pair] || 0) + 1;
           }
         }
       }
@@ -343,6 +264,7 @@ export function useTypingStateMachine({
       setActiveKeyWithTimeout,
       setErrorKeyWithTimeout,
       updateBoundaryErrors,
+      resetAllState,
     ]
   );
 
@@ -353,75 +275,25 @@ export function useTypingStateMachine({
   // Build session result when complete
   useEffect(() => {
     if (state.status === "complete" && onComplete && state.completedAt) {
-      const duration = activeTypingTimeRef.current;
-
-      // Count mistakes (using recordedMistakePositions for consistency with mistakesByKey)
-      const totalMistakes = recordedMistakePositions.current.size;
-
-      const categoryBreakdown = calculateCategoryBreakdown(
-        state.text,
-        state.characters,
-        duration
-      );
-
-      // Count attempts per key from the text
-      const attemptsByKey: Record<string, number> = {};
-      for (const char of state.text) {
-        attemptsByKey[char] = (attemptsByKey[char] || 0) + 1;
-      }
-
-      const wordsTyped = wordBoundaries.length;
-      const sentencesTyped = sentenceBoundaries.length;
-      const paragraphsTyped = paragraphBoundaries.length;
-
-      const bs = boundaryErrorState.current;
-
-      const result: SessionResult = {
-        id: state.id,
-        timestamp: state.completedAt,
-        duration,
+      const result = buildSessionResult({
+        state,
         mode,
-        grossWPM: Math.round((state.text.length / 5) / (duration / 60000)),
-        netWPM: Math.round(
-          ((state.text.length / 5) - totalMistakes) / (duration / 60000)
-        ),
-        accuracy: state.text.length > 0
-          ? Math.floor(((state.text.length - totalMistakes) / state.text.length) * 100)
-          : 100,
-        totalCharacters: state.text.length,
-        totalMistakes,
-        categoryBreakdown,
-        attemptsByKey,
-        mistakesByKey: { ...mistakesByKey.current },
-        mistakesByPair: { ...mistakesByPair.current },
-        wordsTyped,
-        wordsWithErrors: bs.wordsWithErrors,
-        errorsPerWord:
-          wordsTyped > 0
-            ? Math.round((bs.wordsWithErrors / wordsTyped) * 100) / 100
-            : 0,
-        sentencesTyped,
-        sentencesWithErrors: bs.sentencesWithErrors,
-        errorsPerSentence:
-          sentencesTyped > 0
-            ? Math.round((bs.sentencesWithErrors / sentencesTyped) * 100) / 100
-            : 0,
-        paragraphsTyped,
-        paragraphsWithErrors: bs.paragraphsWithErrors,
-        errorsPerParagraph:
-          paragraphsTyped > 0
-            ? Math.round((bs.paragraphsWithErrors / paragraphsTyped) * 100) / 100
-            : 0,
-      };
+        duration: activeTypingTimeRef.current,
+        mistakesByKey: mistakesByKeyRef.current,
+        mistakesByPair: mistakesByPairRef.current,
+        recordedMistakeCount: recordedMistakePositionsRef.current.size,
+        boundaryErrorState: boundaryErrorStateRef.current,
+        wordBoundaries,
+        sentenceBoundaries,
+        paragraphBoundaries,
+      });
 
       onComplete(result);
     }
   }, [
     state.status,
     state.completedAt,
-    state.id,
-    state.text,
-    state.characters,
+    state,
     mode,
     onComplete,
     wordBoundaries,
@@ -430,35 +302,15 @@ export function useTypingStateMachine({
   ]);
 
   const reset = useCallback(() => {
-    dispatch({ type: "RESET", errorMode });
-    mistakesByKey.current = {};
-    mistakesByPair.current = {};
-    recordedMistakePositions.current = new Set();
-    activeTypingTimeRef.current = 0;
-    lastKeystrokeTimeRef.current = 0;
-    boundaryErrorState.current = {
-      currentWordHasError: false,
-      currentSentenceHasError: false,
-      currentParagraphHasError: false,
-      wordsWithErrors: 0,
-      sentencesWithErrors: 0,
-      paragraphsWithErrors: 0,
-    };
-    setLiveStats({
-      elapsedTime: 0,
-      currentWPM: 0,
-      currentAccuracy: 100,
-      charactersTyped: 0,
-      mistakeCount: 0,
-      progress: 0,
-    });
+    resetAllState();
+    setLiveStats(createDefaultLiveStats());
     setActiveKey(null);
     setNextKey(text[0] || null);
     setErrorKey(null);
-  }, [text, errorMode]);
+  }, [text, resetAllState]);
 
   // Build a compatible session object for existing components
-  const session = useMemo(() => ({
+  const session: TypingSession = useMemo(() => ({
     id: state.id,
     startedAt: state.startedAt ?? 0,
     endedAt: state.completedAt ?? undefined,
@@ -471,7 +323,7 @@ export function useTypingStateMachine({
     wordBoundaries,
     sentenceBoundaries,
     paragraphBoundaries,
-    ...boundaryErrorState.current,
+    ...boundaryErrorStateRef.current,
   }), [
     state,
     mode,

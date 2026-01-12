@@ -1,7 +1,7 @@
 // Keyboard module - layout definitions and utilities
 
 // Types
-export * from "./types";
+export * from "./keyDefinition";
 
 // Layout and utilities
 export {

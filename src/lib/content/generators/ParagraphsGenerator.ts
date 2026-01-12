@@ -11,7 +11,7 @@ import type {
   ParagraphsGeneratorOptions,
   GeneratedContent,
   TaggedParagraph,
-} from "../types";
+} from "../contentTypes";
 import { queryTaggedParagraphs } from "../contentQuery";
 import { selectWeightedItemFromTagged, stripNumbers, stripPunctuation } from "./utils";
 

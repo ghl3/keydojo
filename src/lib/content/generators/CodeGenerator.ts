@@ -7,7 +7,7 @@
  * - Mixed mode for variety
  */
 
-import type { CodeGeneratorOptions, GeneratedContent, CodeLanguage, CodeLanguageTag } from "../types";
+import type { CodeGeneratorOptions, GeneratedContent, CodeLanguage, CodeLanguageTag } from "../contentTypes";
 import { queryCode } from "../contentQuery";
 import { shuffle } from "./utils";
 

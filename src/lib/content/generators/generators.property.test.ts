@@ -4,12 +4,12 @@
 
 import { describe, it, expect } from "vitest";
 import fc from "fast-check";
-import { WordsGenerator } from "../WordsGenerator";
-import { SentencesGenerator } from "../SentencesGenerator";
-import { ParagraphsGenerator } from "../ParagraphsGenerator";
-import { CodeGenerator } from "../CodeGenerator";
-import { generateContent } from "../generateContent";
-import type { CodeLanguage, ContentGeneratorInput } from "../../types";
+import { WordsGenerator } from "./WordsGenerator";
+import { SentencesGenerator } from "./SentencesGenerator";
+import { ParagraphsGenerator } from "./ParagraphsGenerator";
+import { CodeGenerator } from "./CodeGenerator";
+import { generateContent } from "./generateContent";
+import type { CodeLanguage, ContentGeneratorInput } from "../contentTypes";
 
 // ============= WORDS GENERATOR =============
 

@@ -11,7 +11,7 @@ import type {
   ParagraphThemeTag,
   ParagraphContentTag,
   TaggedParagraph,
-} from "../types";
+} from "../contentTypes";
 
 // Theme keywords for detection (similar to sentence tagger but aggregated)
 const THEME_KEYWORDS: Record<ParagraphThemeTag, string[]> = {
